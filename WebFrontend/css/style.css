@@ -1,0 +1,35 @@
+body {
+    font-size: 100%;
+    font-family: Verdana;
+    background-color:#DCDCDC;
+	color:#000000;
+	margin:10px;
+}
+
+table {
+    table-layout:fixed;
+}
+
+td {
+    word-wrap:break-word;
+}
+
+#cs_logout {
+	  position:absolute;
+	  top: 50px;
+	  right: 50px;
+	  visibility:hidden;
+}
+#selectMethod
+{	position:absolute;
+	  top: 200px;
+	  left: 100px;	
+	  visibility:hidden;
+}
+#textBoxesDiv
+{
+		position:absolute;
+	  top: 200px;
+	  left: 350px;	
+	
+}
