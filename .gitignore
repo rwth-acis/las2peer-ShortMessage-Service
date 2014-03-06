@@ -1,7 +1,7 @@
 .las2peer/*
 bin/*
 export/*
-ivy/*
+ivy.jar
 lib/*
 log/*
 tmp/*
