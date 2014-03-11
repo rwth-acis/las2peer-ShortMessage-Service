@@ -3,11 +3,11 @@ package i5.las2peer.services.shortMessageService;
 import i5.las2peer.api.Service;
 import i5.las2peer.communication.Message;
 import i5.las2peer.p2p.AgentNotKnownException;
-import i5.las2peer.p2p.MessageResultListener;
 import i5.las2peer.security.AgentException;
 import i5.las2peer.security.L2pSecurityException;
 import i5.las2peer.security.Mediator;
 import i5.las2peer.security.UserAgent;
+import i5.las2peer.services.shortMessageService.StoredMessage.StoredMessageSendState;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -15,6 +15,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 
@@ -37,7 +39,6 @@ import java.util.List;
  * @author Thomas Cujé
  * 
  */
-// FIXME use local and envelope persistent buffers to store messages
 public class ShortMessageService extends Service {
 
     /**
@@ -45,20 +46,28 @@ public class ShortMessageService extends Service {
      */
     private long sendTimeout = 2000;
     private long maxMessageLength = 140;
+    private String storageFile = "shortMessage-storage.local";
 
-    private MessageResultListener messageResultListener;
+    private ShortMessageStorage storage;
+    private ExecutorService dispatcher;
 
     /**
      * Constructor: Loads the property file.
      */
     public ShortMessageService() {
         setFieldValues();
-        // TODO load the message buffer and start the delivery thread
+        // TODO load the persistent message storage
+//        try {
+//            storage = new ShortMessageStorage(getContext(), getAgent(), storageFile);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            logMessage("Can't initialize persistent storage " + e);
+//        }
+        dispatcher = Executors.newCachedThreadPool();
     }
 
     /**
-     * Sends a {@link i5.las2peer.services.shortMessageService.ShortMessage} to an agent. Has a build in wait mechanism
-     * to prevent floating the network with new messages.
+     * Sends a {@link i5.las2peer.services.shortMessageService.ShortMessage} to an agent.
      * 
      * @param message
      *            a simple text message
@@ -66,32 +75,31 @@ public class ShortMessageService extends Service {
      *            the agent representing the recipient
      * @return success or error message
      */
-    public String sendMessage(String message, UserAgent receivingAgent) {
+    public String sendMessage(UserAgent receivingAgent, String message) {
         // validate message
         if (message == null || message.isEmpty()) {
             return "Message can not be empty!";
         }
-        if (message.length() > sendTimeout) {
+        if (message.length() > maxMessageLength) {
             return "Message too long! (Maximum: " + maxMessageLength + ")";
         }
-        // TODO add message to buffer
-        UserAgent sendingAgent = (UserAgent) this.getActiveAgent();
+        // create las2peer message
+        UserAgent sendingAgent = (UserAgent) getActiveAgent();
         ShortMessage msg = new ShortMessage(sendingAgent.getId(), receivingAgent.getId(), message);
+        msg.setSendTimestamp(new GregorianCalendar());
+        Message toSend;
         try {
-            // FIXME handle message send timeout
-            if (messageResultListener == null || messageResultListener.isFinished()) {
-                msg.setSendTimestamp(new GregorianCalendar());
-                Message toSend = new Message(sendingAgent, receivingAgent, msg);
-                messageResultListener = new MessageResultListener(sendTimeout);
-                getActiveNode().sendMessage(toSend, messageResultListener);
-                return "Message sent";
-            } else {
-                return "Please wait. This node is busy";
-            }
+            toSend = new Message(sendingAgent, receivingAgent, msg);
         } catch (Exception e) {
-            e.printStackTrace();
-            return "Error while sending message! Exception: " + e.toString();
+            logMessage("Failure sending message " + e);
+            return "Message can't be send";
         }
+        initStorage();
+        StoredMessage stored = new StoredMessage(toSend, StoredMessageSendState.NEW);
+        storage.addMessage(stored);
+        ShortMessageDeliverer deliverer = new ShortMessageDeliverer(storage, getActiveNode(), stored, sendTimeout);
+        dispatcher.execute(deliverer);
+        return "Message scheduled for delivery";
     }
 
     /**
@@ -104,7 +112,7 @@ public class ShortMessageService extends Service {
      *            the login name or email address representing the recipient
      * @return success or error message
      */
-    public String sendMessage(String message, String recipient) {
+    public String sendMessage(String recipient, String message) {
         if (recipient == null || recipient.isEmpty()) {
             return "No recipient specified!";
         }
@@ -121,7 +129,7 @@ public class ShortMessageService extends Service {
         }
         try {
             UserAgent receivingAgent = (UserAgent) getActiveNode().getAgent(receiverId);
-            return sendMessage(message, receivingAgent);
+            return sendMessage(receivingAgent, message);
         } catch (AgentNotKnownException e) {
             e.printStackTrace();
             return "There exists no agent with id '" + receiverId + "'!";
@@ -134,28 +142,37 @@ public class ShortMessageService extends Service {
      * @return array with all new messages
      */
     public ShortMessage[] getNewMessages() {
+        initStorage();
         UserAgent requestingAgent = (UserAgent) getActiveAgent();
+        // retrieve incoming messages from node and persist them
         try {
             Mediator mediator = getActiveNode().getOrRegisterLocalMediator(requestingAgent);
             if (mediator.hasMessages()) {
-                List<ShortMessage> returnMessages = new ArrayList<>();
                 Message get = null;
                 while ((get = mediator.getNextMessage()) != null) {
-                    get.open(getActiveNode());
-                    ShortMessage message = (ShortMessage) get.getContent();
-                    returnMessages.add(message);
+                    storage.addMessage(new StoredMessage(get, StoredMessageSendState.DELIVERED));
                 }
-                if (!returnMessages.isEmpty()) {
-                    return returnMessages.toArray(new ShortMessage[0]);
-                } else {
-                    return null;
-                }
-            } else {
-                return null;
             }
         } catch (L2pSecurityException | AgentException e) {
             e.printStackTrace();
             logMessage("Error receiving message! Exception: " + e.toString());
+            return null;
+        }
+        // retrieve all new messages from storage
+        List<Message> messages = storage.getUnreadMessages(requestingAgent);
+        List<ShortMessage> returnMessages = new ArrayList<>();
+        for (Message msg : messages) {
+            try {
+                msg.open(getActiveNode());
+                ShortMessage message = (ShortMessage) msg.getContent();
+                returnMessages.add(message);
+            } catch (AgentNotKnownException | L2pSecurityException e) {
+                logMessage("Can't open message " + e);
+            }
+        }
+        if (!returnMessages.isEmpty()) {
+            return returnMessages.toArray(new ShortMessage[0]);
+        } else {
             return null;
         }
     }
@@ -208,26 +225,6 @@ public class ShortMessageService extends Service {
      *            the method name
      * @return A list with all parameters of the given input method
      */
-//	public String[] getParameterTypesOfMethod(String methodName) {
-//		for (Method m : ShortMessageService.class.getDeclaredMethods()) {
-//			if (Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers())
-//					&& m.getName().equals(methodName)) {
-//				Class[] parameterTypesClasses = m.getParameterTypes();
-//				String[] parameterTypes = new String[parameterTypesClasses.length];
-//				for (int i = 0; i < parameterTypes.length; i++) {
-//					parameterTypes[i] = parameterTypesClasses[i].getSimpleName();
-//				}
-//
-//				if (parameterTypesClasses.length != 0) {
-//					return parameterTypes;
-//				}
-//
-//				return null;
-//			}
-//		}
-//		return new String[] { "No such method declared in the service " + ShortMessageService.class.getName() + "." };
-//	}
-
     public String[] getParameterTypesOfMethod(int methodIndex) {
         for (Method m : ShortMessageService.class.getDeclaredMethods()) {
             if (Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers()) && methodIndex == 0) {
@@ -249,6 +246,16 @@ public class ShortMessageService extends Service {
         return new String[] { "No such method declared in the service " + ShortMessageService.class.getName() + "." };
     }
 
-    // TODO add status function with node infos about how many messages sent, received and in queue or failed
+    public void initStorage() {
+        if (storage == null) {
+            // load the persistent message storage
+            try {
+                storage = new ShortMessageStorage(getContext(), getAgent(), storageFile);
+            } catch (Exception e) {
+                e.printStackTrace();
+                logMessage("Can't initialize persistent storage " + e);
+            }
+        }
+    }
 
 }
