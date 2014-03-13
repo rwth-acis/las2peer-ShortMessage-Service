@@ -5,5 +5,3 @@ ivy.jar
 lib/*
 log/*
 tmp/*
-
-.classpath
