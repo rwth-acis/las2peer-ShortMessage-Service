@@ -15,8 +15,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * 
@@ -46,24 +44,23 @@ public class ShortMessageService extends Service {
      */
     private long sendTimeout = 2000;
     private long maxMessageLength = 140;
-    private String storageFile = "shortMessage-storage.local";
+    private String storageIdentifier = "network-storage";
+    private String storageFile = "shortMessage-storage.xml";
 
     private ShortMessageStorage storage;
-    private ExecutorService dispatcher;
 
     /**
      * Constructor: Loads the property file.
      */
     public ShortMessageService() {
         setFieldValues();
-        // TODO load the persistent message storage
+        // TODO load the message storage at startup - but how?
 //        try {
 //            storage = new ShortMessageStorage(getContext(), getAgent(), storageFile);
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //            logMessage("Can't initialize persistent storage " + e);
 //        }
-        dispatcher = Executors.newCachedThreadPool();
     }
 
     /**
@@ -94,12 +91,19 @@ public class ShortMessageService extends Service {
             logMessage("Failure sending message " + e);
             return "Message can't be send";
         }
+        // persist message
         initStorage();
         StoredMessage stored = new StoredMessage(toSend, StoredMessageSendState.NEW);
         storage.addMessage(stored);
-        ShortMessageDeliverer deliverer = new ShortMessageDeliverer(storage, getActiveNode(), stored, sendTimeout);
-        dispatcher.execute(deliverer);
-        return "Message scheduled for delivery";
+        try {
+            // start delivery thread
+            ShortMessageDeliverer deliverer = new ShortMessageDeliverer(getAgent(), getContext(), storage,
+                    getActiveNode(), stored, sendTimeout);
+            deliverer.start();
+            return "Message scheduled for delivery";
+        } catch (AgentNotKnownException e) {
+            return "Could not start message delivery " + e;
+        }
     }
 
     /**
@@ -160,6 +164,7 @@ public class ShortMessageService extends Service {
         }
         // retrieve all new messages from storage
         List<Message> messages = storage.getUnreadMessages(requestingAgent);
+        // decrypt messages for retrieving agent
         List<ShortMessage> returnMessages = new ArrayList<>();
         for (Message msg : messages) {
             try {
@@ -248,10 +253,10 @@ public class ShortMessageService extends Service {
         if (storage == null) {
             // load the persistent message storage
             try {
-                storage = new ShortMessageStorage(getContext(), getAgent(), storageFile);
+                storage = new ShortMessageStorage(getContext(), getAgent(), storageIdentifier, storageFile);
             } catch (Exception e) {
                 e.printStackTrace();
-                logMessage("Can't initialize persistent storage " + e);
+                logError("Can't initialize persistent storage " + e);
             }
         }
     }

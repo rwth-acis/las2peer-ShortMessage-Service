@@ -5,3 +5,4 @@ ivy.jar
 lib/*
 log/*
 tmp/*
+/shortMessage-storage.xml
