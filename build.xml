@@ -60,6 +60,7 @@
 	
 	<target name="init_general">
 		<tstamp/>
+		<mkdir dir="${src.junit}" />
 		<mkdir dir="${tmp}" />
 		<mkdir dir="${export}" />
         <mkdir dir="${log}" />

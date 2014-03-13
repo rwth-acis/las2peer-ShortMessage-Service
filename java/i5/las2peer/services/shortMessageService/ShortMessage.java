@@ -43,7 +43,7 @@ public class ShortMessage implements Serializable {
     }
 
     /**
-     * Get the id of the user this {@link i5.las2peer.service.shortMessageService.ShortMessage} was sent from
+     * Get the id of the user this {@link i5.las2peer.services.shortMessageService.ShortMessage} was sent from
      * 
      * @return the user id
      */
@@ -52,7 +52,7 @@ public class ShortMessage implements Serializable {
     }
 
     /**
-     * Get the id of the user this {@link i5.las2peer.service.shortMessageService.ShortMessage} should be delivered to
+     * Get the id of the user this {@link i5.las2peer.services.shortMessageService.ShortMessage} should be delivered to
      * 
      * @return the user id
      */
@@ -61,7 +61,7 @@ public class ShortMessage implements Serializable {
     }
 
     /**
-     * Gets the content of this {@link i5.las2peer.service.shortMessageService.ShortMessage}
+     * Gets the content of this {@link i5.las2peer.services.shortMessageService.ShortMessage}
      * 
      * @return A String containing the content.
      */

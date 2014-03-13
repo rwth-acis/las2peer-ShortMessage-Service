@@ -202,11 +202,9 @@ public class ShortMessageService extends Service {
     }
 
     /**
-     * used in the JS Class to show the parameters of the given method
+     * used in the JS Class to show all methods of this class
      * 
-     * @param methodName
-     *            the method name
-     * @return A list with all parameters of the given input method
+     * @return A list with all method names of this class
      */
     public String[] getMethods() {
         List<String> allMethods = new ArrayList<String>();
@@ -221,8 +219,8 @@ public class ShortMessageService extends Service {
     /**
      * used in the JS Class to show the parameters of the given method
      * 
-     * @param methodName
-     *            the method name
+     * @param methodIndex
+     *            the method index as in the method name array
      * @return A list with all parameters of the given input method
      */
     public String[] getParameterTypesOfMethod(int methodIndex) {
