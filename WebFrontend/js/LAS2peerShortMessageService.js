@@ -1,5 +1,5 @@
 		//Private Porperties
-		var LAS2PEERHOST = "http://localhost:8080/";
+		var LAS2PEERHOST = "http://localhost:9080/";
 		var LAS2PEERSERVICENAME = "i5.las2peer.services.shortMessageService.ShortMessageService";
 		var LAS2peerClient; 
 		
