@@ -137,7 +137,8 @@ public class ShortMessageStorage {
         BufferedWriter writer = null;
         long counter = 0;
         try {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(storageFilename)));
+            // FIXME clear file before writing again
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(storageFilename, false)));
             writer.write("<las2peer:ShortMessageStorage>\n");
             for (ConcurrentLinkedQueue<StoredMessage> queue : buffer.values()) {
                 for (StoredMessage msg : queue) {
@@ -167,6 +168,7 @@ public class ShortMessageStorage {
             if (msg.getMessage().getRecipientId() == requestingAgent.getId() && msg.isRead() == false) {
                 result.add(msg.getMessage());
                 msg.setRead(true);
+                storeMessage(msg);
             }
         }
         return result;
@@ -179,6 +181,11 @@ public class ShortMessageStorage {
         }
         // add new message
         addMessage(message);
+    }
+
+    public Iterable<StoredMessage> getAllTimedoutMessages() {
+        ConcurrentLinkedQueue<StoredMessage> result = buffer.get(StoredMessageSendState.TIMEDOUT);
+        return result;
     }
 
 }

@@ -3,9 +3,12 @@ package i5.las2peer.services.shortMessageService;
 import i5.las2peer.api.Service;
 import i5.las2peer.communication.Message;
 import i5.las2peer.p2p.AgentNotKnownException;
+import i5.las2peer.p2p.Node;
 import i5.las2peer.security.AgentException;
+import i5.las2peer.security.Context;
 import i5.las2peer.security.L2pSecurityException;
 import i5.las2peer.security.Mediator;
+import i5.las2peer.security.ServiceAgent;
 import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.shortMessageService.StoredMessage.StoredMessageSendState;
 
@@ -15,6 +18,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * 
@@ -46,21 +51,34 @@ public class ShortMessageService extends Service {
     private long maxMessageLength = 140;
     private String storageIdentifier = "network-storage";
     private String storageFile = "shortMessage-storage.xml";
+    private long redeliverDelay = 10000;
 
     private ShortMessageStorage storage;
+    private Timer redeliver;
 
     /**
      * Constructor: Loads the property file.
      */
     public ShortMessageService() {
         setFieldValues();
-        // TODO load the message storage at startup - but how?
+        // TODO load the message storage on startup - but how?
 //        try {
-//            storage = new ShortMessageStorage(getContext(), getAgent(), storageFile);
+//            storage = new ShortMessageStorage(getContext(), getAgent(), storageIdentifier, storageFile);
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //            logMessage("Can't initialize persistent storage " + e);
 //        }
+        // TODO init redelivery on startup - but how?
+//        Timer redeliver = new Timer();
+//        redeliver.schedule(new TimerTask() {
+//            @Override
+//            public void run() {
+//                Iterable<StoredMessage> messages = storage.getAllTimedoutMessages();
+//                for (StoredMessage msg : messages) {
+//                    new ShortMessageDeliverer(getAgent(), getContext(), storage, getActiveNode(), msg, sendTimeout);
+//                }
+//            }
+//        }, redeliverDelay, redeliverDelay);
     }
 
     /**
@@ -91,8 +109,10 @@ public class ShortMessageService extends Service {
             logMessage("Failure sending message " + e);
             return "Message can't be send";
         }
-        // persist message
+        // init service
         initStorage();
+        initRedelivery();
+        // persist message
         StoredMessage stored = new StoredMessage(toSend, StoredMessageSendState.NEW);
         storage.addMessage(stored);
         try {
@@ -146,7 +166,9 @@ public class ShortMessageService extends Service {
      * @return array with all new messages
      */
     public ShortMessage[] getNewMessages() {
+        // init service
         initStorage();
+        initRedelivery();
         UserAgent requestingAgent = (UserAgent) getActiveAgent();
         // retrieve incoming messages from node and persist them
         try {
@@ -255,8 +277,35 @@ public class ShortMessageService extends Service {
             try {
                 storage = new ShortMessageStorage(getContext(), getAgent(), storageIdentifier, storageFile);
             } catch (Exception e) {
-                e.printStackTrace();
                 logError("Can't initialize persistent storage " + e);
+            }
+        }
+    }
+
+    public void initRedelivery() {
+        if (redeliver == null) {
+            try {
+                final ServiceAgent agent = getAgent();
+                final Context context = getContext();
+                final Node node = getActiveNode();
+                redeliver = new Timer();
+                redeliver.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        Iterable<StoredMessage> messages = storage.getAllTimedoutMessages();
+                        for (StoredMessage msg : messages) {
+                            ShortMessageDeliverer t = new ShortMessageDeliverer(agent, context, storage, node, msg,
+                                    sendTimeout);
+                            t.start();
+                            // XXX logging
+                            System.out.println("redelivery attempt started");
+//                            context.logMessage(this, "redelivery attempt started");
+                        }
+                    }
+                }, redeliverDelay, redeliverDelay);
+                logMessage("Redelivery thread initialized");
+            } catch (AgentNotKnownException e) {
+                logError("Can't schedule messages for redelivery " + e);
             }
         }
     }
