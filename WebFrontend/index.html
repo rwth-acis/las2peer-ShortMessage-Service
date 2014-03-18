@@ -10,19 +10,33 @@
 </head>
 <body>
 <div class="main">
-	<input onclick="logout()" align = "right" id="cs_logout" style = "font-size: 1.2em;" type="button" value="Logout" />
-	<select id="selectMethod" onChange="ComboBoxChange()"></select>
-    <div id="textBoxesDiv"></div>
-    <form id="cs_loginform" action="javascript:login_form_submit()">
-	<h1>Login</h1>
-	<p>Please login with your LAS2<sup>peer</sup> credentials:</p>
-        <h2><label for="cs_username">Username:</label></h2>
-        <input type="text" id="cs_username" value="User A" />
-        <h2><label for="cs_password">Password:</label></h2>
-        <input type="password" id="cs_password" value="userAPass" />
+	<input id="sms_logout" onclick="logout()" align="right" type="button" value="Logout"/>
+	<div id="sms_errorText"></div>
+	<input id="sms_getnew" onclick="getNewMessages()" type="button" value="get new messages"/>
+	<form id="sms_messageform" action="javascript:message_form_submit()">
+		<label for="sms_recipientInput">Recipient:</label>
+		<input id="sms_recipientInput" type="text" size="30"/>
+		<label for="sms_messageInput">Message:</label>
+		<input id="sms_messageInput" type="text" size="80"/>
+		<input id="sendButton" type="submit" value="Send Message"/>
+	</form>
+	<div id="messageList"></div>
+	<div id="sms_loginform">
+    <form action="javascript:login_form_submit()">
+		<h1>Login</h1>
+		<p>Please login with your LAS2<sup>peer</sup> credentials:</p>
+        <h2><label for="sms_username">Username:</label></h2>
+        <input type="text" id="sms_username" value=""/>
+        <h2><label for="sms_password">Password:</label></h2>
+        <input type="password" id="sms_password" value=""/>
 		<br><br>
         <input style = "font-size: 1.2em;" type="submit"  value="Login!"/>
     </form>
-    </div>
+	Testing Logins:
+	<input type="button" onclick="login('User A', 'userAPass')" value="Login User A"/>
+	<input type="button" onclick="login('User B', 'userBPass')" value="Login User B"/>
+	<input type="button" onclick="login('User C', 'userCPass')" value="Login User C"/>
+	</div>
+</div>
 </body>
 </html>

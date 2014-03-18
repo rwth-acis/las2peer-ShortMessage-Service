@@ -1,35 +1,45 @@
 body {
     font-size: 100%;
     font-family: Verdana;
-    background-color:#DCDCDC;
-	color:#000000;
-	margin:10px;
+    background-color: #DCDCDC;
+	color: #000000;
+	margin: 10px;
 }
 
 table {
-    table-layout:fixed;
+    table-layout: fixed;
 }
 
 td {
-    word-wrap:break-word;
+    word-wrap: break-word;
 }
 
-#cs_logout {
-	  position:absolute;
-	  top: 50px;
-	  right: 50px;
-	  visibility:hidden;
+#sms_logout {
+	position: absolute;
+	top: 50px;
+	right: 50px;
+	visibility: hidden;
+	font-size: 1.2em;
 }
-#selectMethod
-{	position:absolute;
-	  top: 200px;
-	  left: 100px;	
-	  visibility:hidden;
+#sms_errorText {
+	color: #FF0000;
+	font-weight: bold;
 }
-#textBoxesDiv
-{
-		position:absolute;
-	  top: 200px;
-	  left: 350px;	
-	
+#sms_getnew {
+	visibility: hidden;
+	position: absolute;
+	left: 100px;
+	top: 100px;
+}
+#sms_messageform {
+	visibility: hidden;
+	position: absolute;
+	left: 100px;
+	top: 150px;
+}
+#messageList {
+	visibility: hidden;
+	position: absolute;
+	left: 100px;
+	top: 200px;
 }
