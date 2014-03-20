@@ -83,7 +83,8 @@
 			document.getElementById("sms_logout").style.visibility="visible";
 			document.getElementById("sms_messageform").style.visibility="visible";
 			document.getElementById("sms_getnew").style.visibility="visible";
-			document.getElementById("messageList").style.visibility="visible";
+			document.getElementById("sms_messageList").style.visibility="visible";
+			document.getElementById("sms_messageList").innerHTML = '';
 		}
 		
 		/**
@@ -98,7 +99,8 @@
 			document.getElementById("sms_logout").style.visibility="hidden";
 			document.getElementById("sms_messageform").style.visibility="hidden";
 			document.getElementById("sms_getnew").style.visibility="hidden";
-			document.getElementById("messageList").style.visibility="hidden";
+			document.getElementById("sms_messageList").style.visibility="hidden";
+			document.getElementById("sms_messageList").innerHTML = '';
 		}
 		
 		/**
@@ -115,7 +117,7 @@
 			{
 				text.innerHTML = result.value;
 			}
-			var div = document.getElementById("messageList");
+			var div = document.getElementById("sms_messageList");
 			div.appendChild(text);
 		}
 		
