@@ -21,7 +21,10 @@ import i5.simpleXML.XMLSyntaxException;
 public class StoredMessage implements XmlAble {
 
     public enum StoredMessageSendState {
-        NEW, DELIVERED, TIMEDOUT,
+        NEW, // the message was just created and should be send to recipient now
+        TIMEDOUT, // the message timed out while sending and should be resend or droped
+        DELIVERED, // the message was delivered to the recipient agent (used by sending node)
+        RECEIVED, // the message was received by the recipient agent (used by receiving node)
     }
 
     private StoredMessageSendState state;
@@ -34,32 +37,71 @@ public class StoredMessage implements XmlAble {
         read = false;
     }
 
+    /**
+     * Sets the message state
+     * 
+     * @param state
+     *            to set
+     */
     public void setState(StoredMessageSendState state) {
         this.state = state;
     }
 
+    /**
+     * Gets the stored message object
+     * 
+     * @return Returns the message object
+     */
     public Message getMessage() {
         return message;
     }
 
+    /**
+     * Gets the message state
+     * 
+     * @return Returns the message state
+     */
     public StoredMessageSendState getState() {
         return state;
     }
 
+    /**
+     * Sets the message read state
+     * 
+     * @param state
+     *            true if the message was read, false otherwise
+     */
     public void setRead(boolean state) {
         read = state;
     }
 
+    /**
+     * Gets the message read state as boolean
+     * 
+     * @return Returns a boolean representing the read state for this message
+     */
     public boolean isRead() {
         return read;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toXmlString() {
-        return "<las2peer:storedmessage" + " state=\"" + state + "\" read=\"" + read + "\">\n" + message.toXmlString()
-                + "</las2peer:storedmessage>\n";
+        return "<las2peer:" + this.getClass().getSimpleName() + " state=\"" + state + "\" read=\"" + read + "\">\n"
+                + message.toXmlString() + "</las2peer:" + this.getClass().getSimpleName() + ">\n";
     }
 
+    /**
+     * Create a {@link i5.las2peer.services.shortMessageService.StoredMessage} from a xml string.
+     * 
+     * @param xml
+     *            String representing the xml encoded object
+     * @return Returns a {@link i5.las2peer.services.shortMessageService.StoredMessage} object
+     * @throws MalformedXMLException
+     *             when the String could not be parsed. See exception message for details.
+     */
     public static StoredMessage createFromXml(String xml) throws MalformedXMLException {
         try {
             Element root = Parser.parse(xml, false);

@@ -70,7 +70,7 @@ public class ShortMessageStorage {
         // add messages from local xml file to buffer
         try {
             // XXX how about database support e. g. postgres, mysql or at least sqlite?
-            Element root = Parser.parse(new File(storageFilename), false);
+            Element root = Parser.parse(new File(this.storageFilename), false);
             int counter = 0;
             int childCount = root.getChildCount();
             for (int n = 0; n < childCount; n++) {
@@ -105,6 +105,10 @@ public class ShortMessageStorage {
         persistBuffer();
     }
 
+    /**
+     * Persists the internal buffer used by this {@link i5.las2peer.services.shortMessageService.ShortMessageStorage}.
+     * The buffer is stored as a shared object inside the network and written to file on local hdd.
+     */
     private void persistBuffer() {
         // persist buffer to envelope
         HashSet<StoredMessage> allMessages = new HashSet<>();
@@ -137,16 +141,15 @@ public class ShortMessageStorage {
         BufferedWriter writer = null;
         long counter = 0;
         try {
-            // FIXME clear file before writing again
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(storageFilename, false)));
-            writer.write("<las2peer:ShortMessageStorage>\n");
+            writer.write("<las2peer:" + this.getClass().getSimpleName() + ">\n");
             for (ConcurrentLinkedQueue<StoredMessage> queue : buffer.values()) {
                 for (StoredMessage msg : queue) {
                     writer.write(msg.toXmlString());
                     counter++;
                 }
             }
-            writer.write("</las2peer:ShortMessageStorage>\n");
+            writer.write("</las2peer:" + this.getClass().getSimpleName() + ">\n");
         } catch (FileNotFoundException e) {
             Context.logError(this, "Can't create local persistence file " + e);
         } catch (IOException e) {
@@ -163,8 +166,8 @@ public class ShortMessageStorage {
 
     public List<Message> getUnreadMessages(UserAgent requestingAgent) {
         List<Message> result = new LinkedList<>();
-        ConcurrentLinkedQueue<StoredMessage> delivered = buffer.get(StoredMessageSendState.DELIVERED);
-        for (StoredMessage msg : delivered) {
+        ConcurrentLinkedQueue<StoredMessage> received = buffer.get(StoredMessageSendState.RECEIVED);
+        for (StoredMessage msg : received) {
             if (msg.getMessage().getRecipientId() == requestingAgent.getId() && msg.isRead() == false) {
                 result.add(msg.getMessage());
                 msg.setRead(true);

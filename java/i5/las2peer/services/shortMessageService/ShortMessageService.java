@@ -104,7 +104,7 @@ public class ShortMessageService extends Service {
         msg.setSendTimestamp(new GregorianCalendar());
         Message toSend;
         try {
-            toSend = new Message(sendingAgent, receivingAgent, msg);
+            toSend = new Message(getAgent(), receivingAgent, msg);
         } catch (Exception e) {
             logMessage("Failure sending message " + e);
             return "Message can't be send";
@@ -176,7 +176,10 @@ public class ShortMessageService extends Service {
             if (mediator.hasMessages()) {
                 Message get = null;
                 while ((get = mediator.getNextMessage()) != null) {
-                    storage.addMessage(new StoredMessage(get, StoredMessageSendState.DELIVERED));
+                    // add message to local cache
+                    StoredMessage recv = new StoredMessage(get, StoredMessageSendState.RECEIVED);
+                    ((ShortMessage) recv.getMessage().getContent()).setReceiveTimestamp(new GregorianCalendar());
+                    storage.addMessage(recv);
                 }
             }
         } catch (L2pSecurityException | AgentException e) {

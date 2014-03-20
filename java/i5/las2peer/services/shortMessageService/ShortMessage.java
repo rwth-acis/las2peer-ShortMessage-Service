@@ -23,6 +23,7 @@ public class ShortMessage implements Serializable {
     private final String content;
     private final Calendar timeCreated;
     private Calendar timeSend;
+    private Calendar timeReceive;
 
     /**
      * Constructor for a {@link i5.las2peer.services.shortMessageService.ShortMessage}. Will be called by the
@@ -43,18 +44,20 @@ public class ShortMessage implements Serializable {
     }
 
     /**
-     * Get the id of the user this {@link i5.las2peer.services.shortMessageService.ShortMessage} was sent from
+     * Gets the id of the sender user agent this {@link i5.las2peer.services.shortMessageService.ShortMessage} was sent
+     * from.
      * 
-     * @return the user id
+     * @return the user agent id
      */
     public long getSenderId() {
         return sender;
     }
 
     /**
-     * Get the id of the user this {@link i5.las2peer.services.shortMessageService.ShortMessage} should be delivered to
+     * Gets the id of the user agent this {@link i5.las2peer.services.shortMessageService.ShortMessage} should be
+     * delivered to.
      * 
-     * @return the user id
+     * @return the user agent id
      */
     public long getReceiverId() {
         return receiver;
@@ -63,27 +66,59 @@ public class ShortMessage implements Serializable {
     /**
      * Gets the content of this {@link i5.las2peer.services.shortMessageService.ShortMessage}
      * 
-     * @return A String containing the content.
+     * @return A String containing the actual message as String.
      */
     public String getMessage() {
         return content;
     }
 
     /**
-     * Gets the time this {@link i5.las2peer.services.shortMessageService.ShortMessage} was created.
+     * Gets the timestamp this {@link i5.las2peer.services.shortMessageService.ShortMessage} was created.
      * 
-     * @return A {@link java.util.GregorianCalendar} containing the full time, date and timezone of creation.
+     * @return Returns a {@link java.util.Calendar} containing the full time, date and timezone of creation.
      */
     public Calendar getCreateTimestamp() {
         return timeCreated;
     }
 
+    /**
+     * Sets the timestamp this {@link i5.las2peer.services.shortMessageService.ShortMessage} was sent. This function
+     * should be called immediately before sending the message.
+     * 
+     * @param timestamp
+     *            A {@link java.util.Calendar} with the timestamp when this message was send.
+     */
     public void setSendTimestamp(Calendar timestamp) {
         timeSend = timestamp;
     }
 
+    /**
+     * Gets the sent timestamp for this {@link i5.las2peer.services.shortMessageService.ShortMessage}
+     * 
+     * @return Returns a {@link java.util.Calendar} with the sent timestamp.
+     */
     public Calendar getSendTimestamp() {
         return timeSend;
+    }
+
+    /**
+     * Sets the timestamp this {@link i5.las2peer.services.shortMessageService.ShortMessage} was received. This function
+     * should be called immediately after receiving the message.
+     * 
+     * @param timestamp
+     *            A {@link java.util.Calendar} with the timestamp when this message was received.
+     */
+    public void setReceiveTimestamp(Calendar timestamp) {
+        timeReceive = timestamp;
+    }
+
+    /**
+     * Gets the receive timestamp for this {@link i5.las2peer.services.shortMessageService.ShortMessage}
+     * 
+     * @return Returns a {@link java.util.Calendar} with the receive timestamp.
+     */
+    public Calendar getReceiveTimestamp() {
+        return timeReceive;
     }
 
 }

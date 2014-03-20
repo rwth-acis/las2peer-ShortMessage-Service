@@ -53,4 +53,5 @@ public class ShortMessageDeliverer extends L2pThread {
             storage.storeMessage(toDeliver);
         }
     }
+
 }
