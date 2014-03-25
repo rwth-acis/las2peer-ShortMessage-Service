@@ -95,7 +95,7 @@ public class ShortMessageStorage {
     }
 
     /**
-     * Persist the given message inside the buffer
+     * Just add the given message to the internal buffer
      * 
      * @param message
      */
@@ -182,7 +182,7 @@ public class ShortMessageStorage {
         for (Entry<StoredMessageSendState, ConcurrentLinkedQueue<StoredMessage>> entry : buffer.entrySet()) {
             entry.getValue().remove(message);
         }
-        // add new message
+        // add message to buffer
         addMessage(message);
     }
 
