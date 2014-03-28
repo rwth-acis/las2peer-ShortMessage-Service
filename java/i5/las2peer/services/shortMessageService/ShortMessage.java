@@ -24,6 +24,7 @@ public class ShortMessage implements Serializable {
     private final Calendar timeCreated;
     private Calendar timeSend;
     private Calendar timeReceive;
+    private boolean read;
 
     /**
      * Constructor for a {@link i5.las2peer.services.shortMessageService.ShortMessage}. Will be called by the
@@ -119,6 +120,25 @@ public class ShortMessage implements Serializable {
      */
     public Calendar getReceiveTimestamp() {
         return timeReceive;
+    }
+
+    /**
+     * Gets the message read state as boolean
+     * 
+     * @return Returns a boolean representing the read state for this message
+     */
+    public boolean isRead() {
+        return read;
+    }
+
+    /**
+     * Sets the message read state
+     * 
+     * @param state
+     *            true if the message was read, false otherwise
+     */
+    public void setRead(boolean read) {
+        this.read = read;
     }
 
 }

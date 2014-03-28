@@ -8,9 +8,8 @@ import i5.las2peer.security.L2pSecurityException;
 import i5.las2peer.security.Mediator;
 import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.shortMessageService.StoredMessage.StoredMessageSendState;
+import i5.las2peer.services.shortMessageService.storage.NetworkStorage;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
@@ -44,18 +43,20 @@ public class ShortMessageService extends Service {
      */
     private long sendTimeout = 2000;
     private long maxMessageLength = 140;
-    private String storageIdentifier = "network-storage";
+    private String storageIdentifier = "shortmessagestorage";
     private String storageFile = "shortMessage-storage.xml";
 
-    private ShortMessageStorage storage;
+    private final StorageHandler storage;
 
     /**
      * Constructor: Loads the property file.
      */
     public ShortMessageService() {
         setFieldValues();
-        // TODO load the message storage on startup
-//        initStorage();
+        storage = new StorageHandler(storageIdentifier);
+        // add network persistence
+        storage.registerStorage(new NetworkStorage());
+        // TODO add local file persistence
     }
 
     /**
@@ -88,11 +89,9 @@ public class ShortMessageService extends Service {
             logMessage("Failure sending message " + e);
             return "Message can't be send";
         }
-        // init storage
-        initStorage();
         // persist message
         StoredMessage stored = new StoredMessage(toSend, StoredMessageSendState.NEW);
-        storage.addMessage(stored);
+        storage.persistMessage(getContext(), stored, sendingAgent);
         try {
             // start delivery thread
             ShortMessageDeliverer deliverer = new ShortMessageDeliverer(getAgent(), getContext(), storage,
@@ -144,8 +143,6 @@ public class ShortMessageService extends Service {
      * @return array with all new messages
      */
     public ShortMessage[] getNewMessages() {
-        // init storage
-        initStorage();
         UserAgent requestingAgent = (UserAgent) getActiveAgent();
         // retrieve incoming messages from node and persist them
         try {
@@ -156,7 +153,7 @@ public class ShortMessageService extends Service {
                     // add message to local cache
                     ((ShortMessage) get.getContent()).setReceiveTimestamp(new GregorianCalendar());
                     StoredMessage recv = new StoredMessage(get, StoredMessageSendState.RECEIVED);
-                    storage.addMessage(recv);
+                    storage.persistMessage(getContext(), recv, requestingAgent);
                 }
             }
         } catch (L2pSecurityException | AgentException e) {
@@ -165,14 +162,16 @@ public class ShortMessageService extends Service {
             return null;
         }
         // retrieve all new messages from storage
-        List<Message> messages = storage.getUnreadMessages(requestingAgent);
+        List<Message> messages = storage.getMessages(getContext(), requestingAgent, StoredMessageSendState.RECEIVED);
         // decrypt messages for retrieving agent
         List<ShortMessage> returnMessages = new ArrayList<>();
         for (Message msg : messages) {
             try {
                 msg.open(getActiveNode());
                 ShortMessage message = (ShortMessage) msg.getContent();
-                returnMessages.add(message);
+                if (message.isRead() == false) {
+                    returnMessages.add(message);
+                }
             } catch (AgentNotKnownException | L2pSecurityException e) {
                 logMessage("Can't open message " + e);
             }
@@ -205,60 +204,6 @@ public class ShortMessageService extends Service {
             }
             String[] txtMessages = msgList.toArray(new String[0]);
             return txtMessages;
-        }
-    }
-
-    /**
-     * used in the JS Class to show all methods of this class
-     * 
-     * @return A list with all method names of this class
-     */
-    public String[] getMethods() {
-        List<String> allMethods = new ArrayList<String>();
-        for (Method m : ShortMessageService.class.getDeclaredMethods()) {
-            if (Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers())) {
-                allMethods.add(m.getName());
-            }
-        }
-        return allMethods.toArray(new String[allMethods.size()]);
-    }
-
-    /**
-     * used in the JS Class to show the parameters of the given method
-     * 
-     * @param methodIndex
-     *            the method index as in the method name array
-     * @return A list with all parameters of the given input method
-     */
-    public String[] getParameterTypesOfMethod(int methodIndex) {
-        for (Method m : ShortMessageService.class.getDeclaredMethods()) {
-            if (Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers()) && methodIndex == 0) {
-                Class<?>[] parameterTypesClasses = m.getParameterTypes();
-                String[] parameterTypes = new String[parameterTypesClasses.length];
-                for (int i = 0; i < parameterTypes.length; i++) {
-                    parameterTypes[i] = parameterTypesClasses[i].getSimpleName();
-                }
-
-                if (parameterTypesClasses.length != 0) {
-                    return parameterTypes;
-                }
-
-                return null;
-            } else {
-                methodIndex--;
-            }
-        }
-        return new String[] { "No such method declared in the service " + ShortMessageService.class.getName() + "." };
-    }
-
-    public void initStorage() {
-        if (storage == null) {
-            // load the persistent message storage
-            try {
-                storage = new ShortMessageStorage(getContext(), getAgent(), storageIdentifier, storageFile);
-            } catch (Exception e) {
-                logError("Can't initialize persistent file storage " + e);
-            }
         }
     }
 

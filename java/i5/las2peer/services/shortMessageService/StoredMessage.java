@@ -8,11 +8,12 @@ import i5.simpleXML.Element;
 import i5.simpleXML.Parser;
 import i5.simpleXML.XMLSyntaxException;
 
+import java.util.Random;
+
 /**
  * 
  * <p>
- * Data class that is used by the {@link i5.las2peer.services.shortMessageService.ShortMessageStorage} to persist
- * messages.<br>
+ * Data class that is used by the {@link i5.las2peer.services.shortMessageService.StorageHandler} to persist messages.<br>
  * It contains the las2peer message as well as some meta-data that will be used to categorize this message.
  * 
  * @author Thomas Cujé
@@ -21,20 +22,33 @@ import i5.simpleXML.XMLSyntaxException;
 public class StoredMessage implements XmlAble {
 
     public enum StoredMessageSendState {
+        ANY, // this state matches all other states
         NEW, // the message was just created and should be send to recipient now
         TIMEDOUT, // the message timed out while sending and should be resend or droped
         DELIVERED, // the message was delivered to the recipient agent (used by sending node)
         RECEIVED, // the message was received by the recipient agent (used by receiving node)
     }
 
+    private final long id;
     private StoredMessageSendState state;
-    private boolean read;
+//    private boolean read;
     private final Message message;
 
     public StoredMessage(Message message, StoredMessageSendState state) {
+        Random r = new Random();
+        id = r.nextLong();
         this.message = message;
         this.state = state;
-        read = false;
+//        read = false;
+    }
+
+    /**
+     * Gets the message id
+     * 
+     * @return Returns the message id
+     */
+    public long getId() {
+        return id;
     }
 
     /**
@@ -65,32 +79,33 @@ public class StoredMessage implements XmlAble {
         return state;
     }
 
-    /**
-     * Sets the message read state
-     * 
-     * @param state
-     *            true if the message was read, false otherwise
-     */
-    public void setRead(boolean state) {
-        read = state;
-    }
-
-    /**
-     * Gets the message read state as boolean
-     * 
-     * @return Returns a boolean representing the read state for this message
-     */
-    public boolean isRead() {
-        return read;
-    }
+//    /**
+//     * Sets the message read state
+//     * 
+//     * @param state
+//     *            true if the message was read, false otherwise
+//     */
+//    public void setRead(boolean state) {
+//        read = state;
+//    }
+//
+//    /**
+//     * Gets the message read state as boolean
+//     * 
+//     * @return Returns a boolean representing the read state for this message
+//     */
+//    public boolean isRead() {
+//        return read;
+//    }
 
     /**
      * {@inheritDoc}
      */
     @Override
     public String toXmlString() {
-        return "<las2peer:" + this.getClass().getSimpleName() + " state=\"" + state + "\" read=\"" + read + "\">\n"
-                + message.toXmlString() + "</las2peer:" + this.getClass().getSimpleName() + ">\n";
+//        return "<las2peer:" + this.getClass().getSimpleName() + " state=\"" + state + "\" read=\"" + read + "\">\n"
+        return "<las2peer:" + this.getClass().getSimpleName() + " state=\"" + state + "\">\n" + message.toXmlString()
+                + "</las2peer:" + this.getClass().getSimpleName() + ">\n";
     }
 
     /**
@@ -119,6 +134,17 @@ public class StoredMessage implements XmlAble {
             Context.logError(StoredMessage.class, "Can't create stored message from xml string " + e);
         }
         return null;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (super.equals(other) == true) {
+            return true;
+        } else if (other != null && other instanceof StoredMessage) {
+            return this.getId() == ((StoredMessage) other).getId();
+        } else {
+            return false;
+        }
     }
 
 }
