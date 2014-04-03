@@ -18,7 +18,7 @@ public class NetworkStorage implements IStorage {
     public ArrayList<StoredMessage> getMessages(Context context, String storageId, Agent owner) {
         // load old messages from network
         try {
-            Envelope env = context.getStoredObject(ArrayList.class, storageId);
+            Envelope env = context.getStoredObject(String[].class, storageId);
             env.open(owner);
             String[] old = env.getContent(String[].class);
             env.close();
@@ -39,6 +39,12 @@ public class NetworkStorage implements IStorage {
      */
     @Override
     public void saveMessages(Iterable<StoredMessage> messages, Context context, String storageId, Agent owner) {
+        // convert messages to xml strings
+        List<String> xmlMessages = new LinkedList<>();
+        for (StoredMessage msg : messages) {
+            xmlMessages.add(msg.toXmlString());
+        }
+        String[] xmlArray = xmlMessages.toArray(new String[0]);
         // persist to network shared objects
         try {
             Envelope env = null;
@@ -51,14 +57,10 @@ public class NetworkStorage implements IStorage {
                 env = Envelope.createClassIdEnvelope(String[].class, storageId, owner);
             }
             env.open(owner);
-            // convert messages to xml strings
-            List<String> xmlMessages = new LinkedList<>();
-            for (StoredMessage msg : messages) {
-                xmlMessages.add(msg.toXmlString());
-            }
-            env.updateContent(xmlMessages.toArray(new String[0]));
+            env.updateContent(xmlArray);
             // close envelope
             env.addSignature(owner);
+            // TODO add versioning instead of overwrite
             env.store();
             Context.logMessage(this, "stored " + xmlMessages.size() + " messages in network storage");
         } catch (Exception e) {
