@@ -95,7 +95,7 @@ public class ShortMessageService extends Service {
         try {
             // start delivery thread
             ShortMessageDeliverer deliverer = new ShortMessageDeliverer(getAgent(), getContext(), storage,
-                    getActiveNode(), stored, sendTimeout);
+                    getActiveNode(), stored, sendTimeout, sendingAgent);
             deliverer.start();
             return "Message scheduled for delivery";
         } catch (AgentNotKnownException e) {

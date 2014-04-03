@@ -4,7 +4,6 @@ import i5.las2peer.security.Agent;
 import i5.las2peer.security.Context;
 import i5.las2peer.services.shortMessageService.StoredMessage;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public interface IStorage {
@@ -28,6 +27,6 @@ public interface IStorage {
      * @param storageId identifier for the storage that should be used to persist the messages
      * @param owner the agent of the owner for these messages
      */
-    public void saveMessages(ArrayList<StoredMessage> messages, Context context, String storageId, Agent owner);
+    public void saveMessages(Iterable<StoredMessage> messages, Context context, String storageId, Agent owner);
     
 }

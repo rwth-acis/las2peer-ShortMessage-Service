@@ -3,6 +3,7 @@ package i5.las2peer.services.shortMessageService;
 import i5.las2peer.execution.L2pThread;
 import i5.las2peer.p2p.MessageResultListener;
 import i5.las2peer.p2p.Node;
+import i5.las2peer.security.Agent;
 import i5.las2peer.security.Context;
 import i5.las2peer.security.ServiceAgent;
 import i5.las2peer.services.shortMessageService.StoredMessage.StoredMessageSendState;
@@ -18,14 +19,16 @@ public class ShortMessageDeliverer extends L2pThread {
     private final Node sender;
     private final StoredMessage toDeliver;
     private final long timeout;
+    private final Agent owner;
 
     public ShortMessageDeliverer(ServiceAgent agent, Context context, StorageHandler storage, Node sendingNode,
-            StoredMessage toDeliver, long timeout) {
+            StoredMessage toDeliver, long timeout, Agent sendingAgent) {
         super(agent, null, context);
         this.storage = storage;
         this.sender = sendingNode;
         this.toDeliver = toDeliver;
         this.timeout = timeout;
+        this.owner = sendingAgent;
     }
 
     @Override
@@ -50,7 +53,7 @@ public class ShortMessageDeliverer extends L2pThread {
                         "Something weird happened while sending a message. Neither success nor timed out. Message is scheduled for redelivery.");
             }
             toDeliver.setState(StoredMessageSendState.TIMEDOUT);
-            storage.persistMessage(getContext(), toDeliver, toDeliver.getMessage().getSender());
+            storage.persistMessage(getContext(), toDeliver, owner);
         }
     }
 
