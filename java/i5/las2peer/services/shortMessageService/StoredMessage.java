@@ -31,7 +31,6 @@ public class StoredMessage implements XmlAble {
 
     private final long id;
     private StoredMessageSendState state;
-//    private boolean read;
     private final Message message;
 
     public StoredMessage(Message message, StoredMessageSendState state) {
@@ -39,7 +38,6 @@ public class StoredMessage implements XmlAble {
         id = r.nextLong();
         this.message = message;
         this.state = state;
-//        read = false;
     }
 
     /**
@@ -79,31 +77,11 @@ public class StoredMessage implements XmlAble {
         return state;
     }
 
-//    /**
-//     * Sets the message read state
-//     * 
-//     * @param state
-//     *            true if the message was read, false otherwise
-//     */
-//    public void setRead(boolean state) {
-//        read = state;
-//    }
-//
-//    /**
-//     * Gets the message read state as boolean
-//     * 
-//     * @return Returns a boolean representing the read state for this message
-//     */
-//    public boolean isRead() {
-//        return read;
-//    }
-
     /**
      * {@inheritDoc}
      */
     @Override
     public String toXmlString() {
-//        return "<las2peer:" + this.getClass().getSimpleName() + " state=\"" + state + "\" read=\"" + read + "\">\n"
         return "<las2peer:" + this.getClass().getSimpleName() + " state=\"" + state + "\">\n" + message.toXmlString()
                 + "</las2peer:" + this.getClass().getSimpleName() + ">\n";
     }

@@ -44,7 +44,7 @@ public class ShortMessageService extends Service {
     private long sendTimeout = 2000;
     private long maxMessageLength = 140;
     private String storageIdentifier = "shortmessagestorage";
-    private String storageFile = "shortMessage-storage.xml";
+//    private String storageFile = "shortMessage-storage.xml";
 
     private final StorageHandler storage;
 

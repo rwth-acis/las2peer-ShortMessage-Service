@@ -134,7 +134,7 @@ public class ShortMessage implements Serializable {
     /**
      * Sets the message read state
      * 
-     * @param state
+     * @param read
      *            true if the message was read, false otherwise
      */
     public void setRead(boolean read) {

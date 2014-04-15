@@ -49,7 +49,8 @@ public class NetworkStorage implements IStorage {
         try {
             Envelope env = null;
             try {
-                env = context.getStoredObject(String[].class, storageId);
+                env = Envelope.fetchClassIdEnvelope(String[].class, storageId);
+//                env = context.getStoredObject(String[].class, storageId);
             } catch (Exception e) {
                 // XXX logging
                 e.printStackTrace();
@@ -62,6 +63,7 @@ public class NetworkStorage implements IStorage {
             env.addSignature(owner);
             // TODO add versioning instead of overwrite
             env.store();
+            env.close();
             Context.logMessage(this, "stored " + xmlMessages.size() + " messages in network storage");
         } catch (Exception e) {
             // XXX logging

@@ -10,23 +10,30 @@ public interface IStorage {
 
     /**
      * 
-     * Gets all messages from the container with the specified storageId and opened by the owner's agent 
+     * Gets all messages from the container with the specified storageId and opened by the owner's agent
      * 
-     * @param context just the l2p context
-     * @param storageId identifier for the storage that should be used to get the messages
-     * @param owner the agent of the owner for these messages
-     * @return
+     * @param context
+     *            just the l2p context
+     * @param storageId
+     *            identifier for the storage that should be used to get the messages
+     * @param owner
+     *            the agent of the owner for these messages
+     * @return Returns a list with all messages
      */
     public List<StoredMessage> getMessages(Context context, String storageId, Agent owner);
-    
+
     /**
      * Saves the given message list inside this container under the specified storageId and owned by the given agent
      * 
-     * @param messages the list of messages that should be persistet
-     * @param context just the l2p context
-     * @param storageId identifier for the storage that should be used to persist the messages
-     * @param owner the agent of the owner for these messages
+     * @param messages
+     *            the list of messages that should be persistet
+     * @param context
+     *            just the l2p context
+     * @param storageId
+     *            identifier for the storage that should be used to persist the messages
+     * @param owner
+     *            the agent of the owner for these messages
      */
     public void saveMessages(Iterable<StoredMessage> messages, Context context, String storageId, Agent owner);
-    
+
 }
