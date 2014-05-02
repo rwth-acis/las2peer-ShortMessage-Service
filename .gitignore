@@ -1,9 +1,10 @@
-.las2peer/*
-/bin/*
+.las2peer
+/bin
 !/bin/launchNode.sh
-/export/*
-ivy.jar
-/lib/*
-/log/*
-/tmp/*
+/export
+/etc/ivy/ivy.jar
+/lib
+/log
+/tmp
 /shortMessage-storage.xml
+/service
