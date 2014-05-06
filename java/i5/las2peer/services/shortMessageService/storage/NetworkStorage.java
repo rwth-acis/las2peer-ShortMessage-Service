@@ -49,13 +49,11 @@ public class NetworkStorage implements IStorage {
         try {
             Envelope env = null;
             try {
-                env = Envelope.fetchClassIdEnvelope(String[].class, storageId);
-//                env = context.getStoredObject(String[].class, storageId);
+                env = context.getStoredObject(String[].class, storageId);
             } catch (Exception e) {
                 // XXX logging
-                e.printStackTrace();
                 Context.logMessage(this, "Network storage not found. Creating new one");
-                env = Envelope.createClassIdEnvelope(String[].class, storageId, owner);
+                env = Envelope.createClassIdEnvelope(new String[0], storageId, owner);
             }
             env.open(owner);
             env.updateContent(xmlArray);

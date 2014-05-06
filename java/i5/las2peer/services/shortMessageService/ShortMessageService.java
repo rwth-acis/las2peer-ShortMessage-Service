@@ -167,7 +167,7 @@ public class ShortMessageService extends Service {
         List<ShortMessage> returnMessages = new ArrayList<>();
         for (Message msg : messages) {
             try {
-                msg.open(getActiveNode());
+                msg.open(requestingAgent, getActiveNode());
                 ShortMessage message = (ShortMessage) msg.getContent();
                 if (message.isRead() == false) {
                     returnMessages.add(message);
@@ -199,7 +199,7 @@ public class ShortMessageService extends Service {
                 StringBuilder sb = new StringBuilder();
                 sb.append(sdf.format(sms.getCreateTimestamp().getTime()) + "--->"
                         + sdf.format(sms.getSendTimestamp().getTime()) + " from " + sms.getSenderId() + " to "
-                        + sms.getReceiverId() + " : " + sms.getMessage());
+                        + sms.getReceiverId() + " : " + sms.getMessage() + "<br/>\n");
                 msgList.add(sb.toString());
             }
             String[] txtMessages = msgList.toArray(new String[0]);
