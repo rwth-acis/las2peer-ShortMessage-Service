@@ -3,12 +3,10 @@ package i5.las2peer.services.shortMessageService;
 import i5.las2peer.api.Service;
 import i5.las2peer.communication.Message;
 import i5.las2peer.p2p.AgentNotKnownException;
-import i5.las2peer.security.AgentException;
-import i5.las2peer.security.L2pSecurityException;
-import i5.las2peer.security.Mediator;
+import i5.las2peer.persistency.Envelope;
+import i5.las2peer.security.Agent;
+import i5.las2peer.security.Context;
 import i5.las2peer.security.UserAgent;
-import i5.las2peer.services.shortMessageService.StoredMessage.StoredMessageSendState;
-import i5.las2peer.services.shortMessageService.storage.NetworkStorage;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -41,22 +39,14 @@ public class ShortMessageService extends Service {
     /**
      * service properties with default values, can be overwritten by properties file from config
      */
-    private long sendTimeout = 2000;
     private long maxMessageLength = 140;
-    private String storageIdentifier = "shortmessagestorage";
-//    private String storageFile = "shortMessage-storage.xml";
-
-    private final StorageHandler storage;
+    private String storageBaseName = "shortmessagestorage";
 
     /**
      * Constructor: Loads the property file.
      */
     public ShortMessageService() {
         setFieldValues();
-        storage = new StorageHandler(storageIdentifier);
-        // add network persistence
-        storage.registerStorage(new NetworkStorage());
-        // TODO add local file persistence
     }
 
     /**
@@ -76,31 +66,40 @@ public class ShortMessageService extends Service {
         if (message.length() > maxMessageLength) {
             return "Message too long! (Maximum: " + maxMessageLength + ")";
         }
-        // create las2peer message
+        // create short message
         UserAgent sendingAgent = (UserAgent) getActiveAgent();
         ShortMessage msg = new ShortMessage(sendingAgent.getId(), receivingAgent.getId(), message);
         msg.setSendTimestamp(new GregorianCalendar());
-        Message toSend;
+        // persist message to recipient storage
         try {
-            toSend = new Message(getAgent(), receivingAgent, msg);
+            Message lasMsg = new Message(sendingAgent, receivingAgent, msg);
+            Envelope env = null;
+            try {
+                env = getContext().getStoredObject(ShortMessageBox.class, storageBaseName + receivingAgent.getId());
+            } catch (Exception e) {
+                // XXX logging
+                Context.logMessage(this, "Network storage not found. Creating new one");
+                env = Envelope.createClassIdEnvelope(new ShortMessageBox(1), storageBaseName + receivingAgent.getId(),
+                        getAgent());
+            }
+            env.open(getAgent());
+            // get messages from storage
+            ShortMessageBox stored = env.getContent(ShortMessageBox.class);
+            // add new message
+            stored.addMessage(lasMsg);
+            env.updateContent(stored);
+            // close envelope
+            env.addSignature(getAgent());
+            env.store();
+            env.close();
+            Context.logMessage(this, "stored " + stored.size() + " messages in network storage");
+            return "Message send successfully";
         } catch (Exception e) {
             // XXX logging
             e.printStackTrace();
-            logMessage("Failure sending message " + e);
-            return "Message can't be send";
+            Context.logError(this, "Can't persist short messages to network storage " + e);
         }
-        // persist message
-        StoredMessage stored = new StoredMessage(toSend, StoredMessageSendState.NEW);
-        storage.persistMessage(getContext(), stored, sendingAgent);
-        try {
-            // start delivery thread
-            ShortMessageDeliverer deliverer = new ShortMessageDeliverer(getAgent(), getContext(), storage,
-                    getActiveNode(), stored, sendTimeout, sendingAgent);
-            deliverer.start();
-            return "Message scheduled for delivery";
-        } catch (AgentNotKnownException e) {
-            return "Could not start message delivery " + e;
-        }
+        return "Failure sending message";
     }
 
     /**
@@ -143,44 +142,28 @@ public class ShortMessageService extends Service {
      * @return array with all new messages
      */
     public ShortMessage[] getNewMessages() {
-        UserAgent requestingAgent = (UserAgent) getActiveAgent();
-        // retrieve incoming messages from node and persist them
         try {
-            Mediator mediator = getActiveNode().getOrRegisterLocalMediator(requestingAgent);
-            if (mediator.hasMessages()) {
-                Message get = null;
-                while ((get = mediator.getNextMessage()) != null) {
-                    // add message to local cache
-                    ((ShortMessage) get.getContent()).setReceiveTimestamp(new GregorianCalendar());
-                    StoredMessage recv = new StoredMessage(get, StoredMessageSendState.RECEIVED);
-                    storage.persistMessage(getContext(), recv, requestingAgent);
-                }
+            // load messages from network
+            Agent owner = getActiveAgent();
+            Envelope env = getContext().getStoredObject(ShortMessageBox.class, storageBaseName + owner.getId());
+            env.open(getAgent());
+            ShortMessageBox stored = env.getContent(ShortMessageBox.class);
+            // TODO clear network storage, message persistence should be done by clients
+            env.close();
+            Context.logMessage(this, "Loaded " + stored.size() + " messages from network storage");
+            Message[] messages = stored.getMessages();
+            ShortMessage[] result = new ShortMessage[stored.size()];
+            for (int n = 0 ; n < messages.length ; n++) {
+                messages[n].open(owner, getActiveNode());
+                result[n] = (ShortMessage) messages[n].getContent();
             }
-        } catch (L2pSecurityException | AgentException e) {
+            return result;
+        } catch (Exception e) {
+            // XXX logging
             e.printStackTrace();
-            logMessage("Error receiving message! Exception: " + e.toString());
-            return null;
+            Context.logError(this, "Can't read messages from network storage " + e);
         }
-        // retrieve all new messages from storage
-        List<Message> messages = storage.getMessages(getContext(), requestingAgent, StoredMessageSendState.RECEIVED);
-        // decrypt messages for retrieving agent
-        List<ShortMessage> returnMessages = new ArrayList<>();
-        for (Message msg : messages) {
-            try {
-                msg.open(requestingAgent, getActiveNode());
-                ShortMessage message = (ShortMessage) msg.getContent();
-                if (message.isRead() == false) {
-                    returnMessages.add(message);
-                }
-            } catch (AgentNotKnownException | L2pSecurityException e) {
-                logMessage("Can't open message " + e);
-            }
-        }
-        if (!returnMessages.isEmpty()) {
-            return returnMessages.toArray(new ShortMessage[0]);
-        } else {
-            return null;
-        }
+        return new ShortMessage[0];
     }
 
     /**
@@ -197,9 +180,8 @@ public class ShortMessageService extends Service {
             SimpleDateFormat sdf = new SimpleDateFormat();
             for (ShortMessage sms : messages) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(sdf.format(sms.getCreateTimestamp().getTime()) + "--->"
-                        + sdf.format(sms.getSendTimestamp().getTime()) + " from " + sms.getSenderId() + " to "
-                        + sms.getReceiverId() + " : " + sms.getMessage() + "<br/>\n");
+                sb.append(sdf.format(sms.getSendTimestamp().getTime()) + " from " + sms.getSenderId() + " to "
+                        + sms.getRecipientId() + " : " + sms.getMessage() + "<br/>\n");
                 msgList.add(sb.toString());
             }
             String[] txtMessages = msgList.toArray(new String[0]);

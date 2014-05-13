@@ -1,7 +1,7 @@
 <project name="LAS2peer-ShortMessageService" default="ShortMessageService_jar" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
 
-	<property name="src.main" location="java" />
-	<property name="src.junit" location="junit" />
+	<property name="src.main" location="src/main/java" />
+	<property name="src.junit" location="src/test/java" />
 
 	<property name="tmp" location="tmp" />
 	<property name="log" location="log" />
@@ -38,14 +38,14 @@
 		<get src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" dest="${ivy.jar.file}" usetimestamp="true" skipexisting="true" />
 	</target>
 
-	<target name="install-ivy" depends="download-ivy" description="--> install ivy">
+	<target name="install-ivy" depends="download-ivy">
 		<path id="ivy.lib.path">
 			<fileset dir="${ivy.jar.dir}" includes="*.jar" />
 		</path>
 		<taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path" />
 	</target>
 
-	<target name="get_deps" depends="install-ivy" description="--> resolve dependencies">
+	<target name="get-dependencies" depends="install-ivy" description="get required dependencies">
 		<ivy:settings>
 			<credentials host="role.dbis.rwth-aachen.de:9911/archiva" realm="Repository internal" />
 		</ivy:settings>
@@ -62,7 +62,7 @@
 		<mkdir dir="${log}" />
 	</target>
 
-	<target name="init_compile" depends="get_deps, init_general">
+	<target name="init_compile" depends="get-dependencies, init_general">
 		<mkdir dir="${tmp.classes}" />
 		<mkdir dir="${tmp.junit}" />
 	</target>
@@ -96,7 +96,7 @@
 
 	<target name="compile_all" depends="compile_main, compile_junit" />
 
-	<target name="ShortMessageService_jar" depends="compile_main">
+	<target name="ShortMessageService_jar" depends="compile_main" description="build the jar file used to deploy this service">
 		<property name="ShortMessageService.version" value="0.1" />
 		<jar jarfile="${export.jars}/i5.las2peer.services.shortMessageService-${ShortMessageService.version}.jar">
 			<fileset dir="${tmp.classes}" includes="i5/las2peer/services/shortMessageService/**" />
@@ -115,7 +115,7 @@
 		</jar>
 	</target>
 
-	<target name="java_doc" depends="init_doc">
+	<target name="javadoc" depends="init_doc" description="build java doc">
 		<javadoc destdir="${export.javadoc}" author="true" version="true" use="true" source="1.7" windowtitle="Short Message Service Documentation" failonerror="yes" encoding="utf8" classpath="${tmp.classes}" classpathref="libraries">
 			<packageset dir="${src.main}" defaultexcludes="yes">
 				<include name="i5/las2peer/**" />
@@ -126,7 +126,7 @@
 </target>
 
 <!--   JUNIT testing -->
-<target name="junit" depends="junit_tests, junit_clean" />
+<target name="junit" depends="junit_tests, junit_clean" description="runs all junit tests for this project" />
 
 <target name="init_junit" depends="init_general">
 	<mkdir dir="${junit.report}" />
@@ -155,7 +155,7 @@
 </target>
 
 <!-- general cleanup; don't run this if you want to see unit test results or logging data -->
-<target name="clean">
+<target name="clean" description="removes temporary files and direcotries">
 	<delete dir="${tmp}" />
 	<delete includeemptydirs="true">
 		<fileset dir="${log}" includes="**/*" />
@@ -163,6 +163,6 @@
 	<delete dir=".las2peer" />
 </target>
 
-<target name="all" depends="ShortMessageService_jar, junit, java_doc, clean" />
+<target name="all" depends="ShortMessageService_jar, junit, javadoc, clean" description="build all targets" />
 
 </project>
