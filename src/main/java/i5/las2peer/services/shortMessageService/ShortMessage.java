@@ -2,6 +2,7 @@ package i5.las2peer.services.shortMessageService;
 
 import i5.las2peer.persistency.MalformedXMLException;
 import i5.las2peer.persistency.XmlAble;
+import i5.las2peer.security.Context;
 import i5.simpleXML.Element;
 import i5.simpleXML.Parser;
 import i5.simpleXML.XMLSyntaxException;
@@ -15,8 +16,7 @@ import java.util.GregorianCalendar;
 /**
  * 
  * <p>
- * Data class that is used by the {@link i5.las2peer.services.shortMessageService.ShortMessageService} to transport
- * messages.<br>
+ * Data class that is used by the {@link ShortMessageService} to transport messages.<br>
  * It contains the message itself as well as some meta-data that will be used to categorize this message.
  * 
  * @author Thomas Cujé
@@ -26,17 +26,21 @@ public class ShortMessage implements XmlAble {
 
     private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy;MM;dd;HH;mm;ss;Z");
 
+    /** agent id of the agent who send the message **/
     private final long senderId;
+    /** agent id of the agent this message should be delivered to **/
     private final long recipientId;
+    /** actual plain text of this message **/
     private final String content;
+    /** timestamp when the message was handed to the network **/
     private Calendar timeSend;
 
     /**
-     * Constructor for a {@link i5.las2peer.services.shortMessageService.ShortMessage}. Will be called by the
-     * {@link i5.las2peer.services.shortMessageService.ShortMessageService} before a message is sent.
+     * Constructor for a {@link ShortMessage}. Will be called by the {@link ShortMessageService} before a message is
+     * send.
      * 
      * @param agentIdFrom
-     *            user agent id who sent the message
+     *            user agent id who send the message
      * @param agentIdto
      *            user agent id who should receive the message
      * @param message
@@ -49,8 +53,7 @@ public class ShortMessage implements XmlAble {
     }
 
     /**
-     * Gets the id of the sender user agent this {@link i5.las2peer.services.shortMessageService.ShortMessage} was sent
-     * from.
+     * Gets the id of the sender user agent this {@link ShortMessage} was send from.
      * 
      * @return the user agent id
      */
@@ -59,8 +62,7 @@ public class ShortMessage implements XmlAble {
     }
 
     /**
-     * Gets the id of the user agent this {@link i5.las2peer.services.shortMessageService.ShortMessage} should be
-     * delivered to.
+     * Gets the id of the user agent this {@link ShortMessage} should be delivered to.
      * 
      * @return the user agent id
      */
@@ -69,17 +71,17 @@ public class ShortMessage implements XmlAble {
     }
 
     /**
-     * Gets the content of this {@link i5.las2peer.services.shortMessageService.ShortMessage}
+     * Gets the content of this {@link ShortMessage}
      * 
-     * @return A String containing the actual message as String.
+     * @return A String containing the actual message as plain text String.
      */
     public String getMessage() {
         return content;
     }
 
     /**
-     * Sets the timestamp this {@link i5.las2peer.services.shortMessageService.ShortMessage} was sent. This function
-     * should be called immediately before sending the message.
+     * Sets the timestamp this {@link ShortMessage} was send. This function should be called immediately before sending
+     * the message.
      * 
      * @param timestamp
      *            A {@link java.util.Calendar} with the timestamp when this message was send.
@@ -89,14 +91,20 @@ public class ShortMessage implements XmlAble {
     }
 
     /**
-     * Gets the sent timestamp for this {@link i5.las2peer.services.shortMessageService.ShortMessage}
+     * Gets the send timestamp for this {@link ShortMessage}
      * 
-     * @return Returns a {@link java.util.Calendar} with the sent timestamp.
+     * @return Returns a {@link java.util.Calendar} with the send timestamp.
      */
     public Calendar getSendTimestamp() {
         return timeSend;
     }
 
+    /**
+     * Transform this message object into a xml string. Which can be used to serialize and transfer the object. Use
+     * createFromXml() to get back the {@link ShortMessage} object.
+     * 
+     * @return Returns this object as xml String
+     */
     @Override
     public String toXmlString() {
         String strTime = sdf.format(timeSend.getTime());
@@ -104,7 +112,15 @@ public class ShortMessage implements XmlAble {
                 + "\">" + content + "</las2peer:shortmessage>\n";
     }
 
+    /**
+     * Creates a {@link ShortMessage} object from the given xml String.
+     * 
+     * @param xml String that should be parsed
+     * @return Returns a {@link ShortMessage} object or null if an error occurs.
+     * @throws MalformedXMLException if the xml String is not an {@link ShortMessage} object.
+     */
     public static ShortMessage createFromXml(String xml) throws MalformedXMLException {
+        String attrSend = null;
         try {
             Element root = Parser.parse(xml, false);
             String rootName = root.getName();
@@ -117,21 +133,18 @@ public class ShortMessage implements XmlAble {
             String text = child.getText();
             String message = (text != null ? text : "");
             ShortMessage msg = new ShortMessage(agentIdFrom, agentIdto, message);
-            String attrSend = root.getAttribute("send");
+            attrSend = root.getAttribute("send");
             Date d = sdf.parse(attrSend);
             Calendar cal = GregorianCalendar.getInstance();
             cal.setTime(d);
             msg.setSendTimestamp(cal);
             return msg;
         } catch (XMLSyntaxException e) {
-            // XXX logging
-            e.printStackTrace();
+            Context.logError(ShortMessage.class, "XML syntax error in '" + xml + "' " + e);
         } catch (NumberFormatException e) {
-            // XXX logging
-            e.printStackTrace();
+            Context.logError(ShortMessage.class, "Can't parse timestamp '" + attrSend + "' " + e);
         } catch (ParseException e) {
-            // XXX logging
-            e.printStackTrace();
+            Context.logError(ShortMessage.class, "Parsing failed! " + e);
         }
         return null;
     }

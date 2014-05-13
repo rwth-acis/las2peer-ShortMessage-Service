@@ -24,12 +24,12 @@ import java.util.List;
  * <h3>Usage Hints</h3>
  * 
  * If you are new to LAS2peer and only want to start an instance (or ring) hosting this service, you can make use of the
- * start-script from the scripts directory that come with this project.<br/>
+ * start-script from the bin/ directory that comes with this project.<br/>
  * 
  * Since there currently exists no user manager application, you will have to add each user as an XML-file to the
- * "startup" directory. This directory will be uploaded when you execute the start scripts. To produce agent XML-files,
- * you will have to make use of the LAS2peer ServiceAgentGenerator. At GitHub, there exists a start-script to use this
- * tool in the LAS2peer-Sample-Project of the RWTH-ACIS organization.
+ * "config/startup" directory. This directory will be uploaded when you execute the start scripts. To produce agent
+ * XML-files, you will have to make use of the LAS2peer ServiceAgentGenerator. At GitHub, there exists a script to use
+ * this tool in the LAS2peer-Template-Project of the RWTH-ACIS group.
  * 
  * @author Thomas Cujé
  * 
@@ -37,20 +37,21 @@ import java.util.List;
 public class ShortMessageService extends Service {
 
     /**
-     * service properties with default values, can be overwritten by properties file from config
+     * service properties with default values, can be overwritten with properties file
+     * config/ShortMessageService.properties
      */
     private long maxMessageLength = 140;
     private String storageBaseName = "shortmessagestorage";
 
     /**
-     * Constructor: Loads the property file.
+     * Constructor: Loads the properties file and sets the values.
      */
     public ShortMessageService() {
         setFieldValues();
     }
 
     /**
-     * Sends a {@link i5.las2peer.services.shortMessageService.ShortMessage} to an agent.
+     * Sends a {@link ShortMessage} to an agent.
      * 
      * @param message
      *            a simple text message
@@ -77,8 +78,7 @@ public class ShortMessageService extends Service {
             try {
                 env = getContext().getStoredObject(ShortMessageBox.class, storageBaseName + receivingAgent.getId());
             } catch (Exception e) {
-                // XXX logging
-                Context.logMessage(this, "Network storage not found. Creating new one");
+                Context.logMessage(this, "Network storage not found. Creating new one. " + e);
                 env = Envelope.createClassIdEnvelope(new ShortMessageBox(1), storageBaseName + receivingAgent.getId(),
                         getAgent());
             }
@@ -95,15 +95,13 @@ public class ShortMessageService extends Service {
             Context.logMessage(this, "stored " + stored.size() + " messages in network storage");
             return "Message send successfully";
         } catch (Exception e) {
-            // XXX logging
-            Context.logError(this, "Can't persist short messages to network storage " + e);
+            Context.logError(this, "Can't persist short messages to network storage! " + e);
         }
         return "Failure sending message";
     }
 
     /**
-     * Sends a {@link i5.las2peer.services.shortMessageService.ShortMessage} to an recipient specified by login or
-     * email. Has a build in wait mechanism to prevent floating the network with new messages.
+     * Sends a {@link ShortMessage} to a recipient specified by login or email.
      * 
      * @param message
      *            a simple text message
@@ -136,7 +134,7 @@ public class ShortMessageService extends Service {
     }
 
     /**
-     * Uses the active agent to get all new {@link i5.las2peer.services.shortMessageService.ShortMessage}'s.
+     * Uses the active agent to get all new {@link ShortMessage}'s.
      * 
      * @return array with all new messages
      */
@@ -152,23 +150,21 @@ public class ShortMessageService extends Service {
             Context.logMessage(this, "Loaded " + stored.size() + " messages from network storage");
             Message[] messages = stored.getMessages();
             ShortMessage[] result = new ShortMessage[stored.size()];
-            for (int n = 0 ; n < messages.length ; n++) {
+            for (int n = 0; n < messages.length; n++) {
                 messages[n].open(owner, getActiveNode());
                 result[n] = (ShortMessage) messages[n].getContent();
             }
             return result;
         } catch (Exception e) {
-            // XXX logging
-            e.printStackTrace();
-            Context.logError(this, "Can't read messages from network storage " + e);
+            Context.logError(this, "Can't read messages from network storage! " + e);
         }
         return new ShortMessage[0];
     }
 
     /**
-     * used in the JS frontend to show new messages as strings
+     * used in the web frontend to show new messages as Strings
      * 
-     * @return An array with new messages formated as strings
+     * @return An array with new messages formated as Strings
      */
     public String[] getNewMessagesAsString() {
         ShortMessage[] messages = getNewMessages();
