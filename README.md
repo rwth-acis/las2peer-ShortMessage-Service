@@ -14,12 +14,12 @@ Usage Hints
 If you are new to LAS2peer and only want to start an instance
 hosting this service, you need to build the projects default configuration.
 
-Like: "ant build"
+```ant```
 
 Then you can make use of the start-script from the bin/ directory that comes
 with this project.
 
-Like: "/bin/launchNode.sh"
+```/bin/launchNode.sh```
 
 Since there currently exists no user manager application, you will have to
 add each user as an XML-file to the "startup" directory. This directory will

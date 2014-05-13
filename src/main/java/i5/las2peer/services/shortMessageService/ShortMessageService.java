@@ -96,7 +96,6 @@ public class ShortMessageService extends Service {
             return "Message send successfully";
         } catch (Exception e) {
             // XXX logging
-            e.printStackTrace();
             Context.logError(this, "Can't persist short messages to network storage " + e);
         }
         return "Failure sending message";
