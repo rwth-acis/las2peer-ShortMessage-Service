@@ -13,6 +13,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+import rice.p2p.util.Base64;
+
 /**
  * 
  * <p>
@@ -30,26 +32,30 @@ public class ShortMessage implements XmlAble {
     private final long senderId;
     /** agent id of the agent this message should be delivered to **/
     private final long recipientId;
-    /** actual plain text of this message **/
-    private final String content;
+    /** actual message in base64 encoding **/
+    private final byte[] content;
     /** timestamp when the message was handed to the network **/
     private Calendar timeSend;
 
     /**
      * Constructor for a {@link ShortMessage}. Will be called by the {@link ShortMessageService} before a message is
-     * send.
+     * send. Since the message is base64 encoded even an image could be used as message.
      * 
      * @param agentIdFrom
      *            user agent id who send the message
      * @param agentIdto
      *            user agent id who should receive the message
      * @param message
-     *            the message string itself
+     *            the message itself as byte array
      */
-    public ShortMessage(long agentIdFrom, long agentIdto, String message) {
+    public ShortMessage(long agentIdFrom, long agentIdTo, byte[] message) {
         senderId = agentIdFrom;
-        recipientId = agentIdto;
+        recipientId = agentIdTo;
         content = message;
+    }
+
+    public ShortMessage(long agentIdFrom, long agentIdTo, String message) {
+        this(agentIdFrom, agentIdTo, message.getBytes());
     }
 
     /**
@@ -73,9 +79,9 @@ public class ShortMessage implements XmlAble {
     /**
      * Gets the content of this {@link ShortMessage}
      * 
-     * @return A String containing the actual message as plain text String.
+     * @return A byte array containing the actual message.
      */
-    public String getMessage() {
+    public byte[] getMessage() {
         return content;
     }
 
@@ -109,15 +115,17 @@ public class ShortMessage implements XmlAble {
     public String toXmlString() {
         String strTime = sdf.format(timeSend.getTime());
         return "<las2peer:shortmessage from=\"" + senderId + "\" to=\"" + recipientId + "\"" + " send=\"" + strTime
-                + "\">" + content + "</las2peer:shortmessage>\n";
+                + "\">" + Base64.encodeBytes(content) + "</las2peer:shortmessage>\n";
     }
 
     /**
      * Creates a {@link ShortMessage} object from the given xml String.
      * 
-     * @param xml String that should be parsed
+     * @param xml
+     *            String that should be parsed
      * @return Returns a {@link ShortMessage} object or null if an error occurs.
-     * @throws MalformedXMLException if the xml String is not an {@link ShortMessage} object.
+     * @throws MalformedXMLException
+     *             if the xml String is not an {@link ShortMessage} object.
      */
     public static ShortMessage createFromXml(String xml) throws MalformedXMLException {
         String attrSend = null;
@@ -131,7 +139,7 @@ public class ShortMessage implements XmlAble {
             long agentIdto = Long.parseLong(root.getAttribute("to"));
             Element child = root.getFirstChild();
             String text = child.getText();
-            String message = (text != null ? text : "");
+            byte[] message = (text != null ? Base64.decode(text) : new byte[0]);
             ShortMessage msg = new ShortMessage(agentIdFrom, agentIdto, message);
             attrSend = root.getAttribute("send");
             Date d = sdf.parse(attrSend);

@@ -128,7 +128,6 @@ public class ShortMessageService extends Service {
             UserAgent receivingAgent = (UserAgent) getActiveNode().getAgent(receiverId);
             return sendMessage(receivingAgent, message);
         } catch (AgentNotKnownException e) {
-            e.printStackTrace();
             return "There exists no agent with id '" + receiverId + "'!";
         }
     }
@@ -176,7 +175,7 @@ public class ShortMessageService extends Service {
             for (ShortMessage sms : messages) {
                 StringBuilder sb = new StringBuilder();
                 sb.append(sdf.format(sms.getSendTimestamp().getTime()) + " from " + sms.getSenderId() + " to "
-                        + sms.getRecipientId() + " : " + sms.getMessage() + "<br/>\n");
+                        + sms.getRecipientId() + " : " + new String(sms.getMessage()) + "<br/>\n");
                 msgList.add(sb.toString());
             }
             String[] txtMessages = msgList.toArray(new String[0]);
