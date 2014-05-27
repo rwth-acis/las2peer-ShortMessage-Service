@@ -118,7 +118,7 @@ function showResult(result)
 		text.innerHTML = result.value;
 	}
 	var div = document.getElementById("sms_messageList");
-	div.insertBefore(text, div.firstChild);
+	div.appendChild(text);
 }
 
 /**
@@ -142,8 +142,9 @@ function getNewMessages() {
 			if(status == 200|| status == 204) 
 			{
 				console.log("Message Invoked successfully");
+				result.value = result.value.replace(/\n/g, "<br/>");
 				showResult(result);
-			} 
+			}
 			else 
 			{
 				handleError("Message: " + result);

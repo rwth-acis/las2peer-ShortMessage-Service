@@ -4,6 +4,9 @@ import i5.las2peer.api.Service;
 import i5.las2peer.communication.Message;
 import i5.las2peer.p2p.AgentNotKnownException;
 import i5.las2peer.persistency.Envelope;
+import i5.las2peer.restMapper.RESTMapper;
+import i5.las2peer.restMapper.annotations.GET;
+import i5.las2peer.restMapper.annotations.Path;
 import i5.las2peer.security.Agent;
 import i5.las2peer.security.Context;
 import i5.las2peer.security.GroupAgent;
@@ -11,9 +14,7 @@ import i5.las2peer.security.ServiceAgent;
 import i5.las2peer.security.UserAgent;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.GregorianCalendar;
-import java.util.List;
 
 /**
  * 
@@ -166,26 +167,25 @@ public class ShortMessageService extends Service {
     }
 
     /**
-     * Used by the web frontend to show new messages as Strings
+     * Gets new messages separated by newline (\n) for the requesting agent. Sender and recipient agent ids are replaced
+     * with their names.
      * 
-     * @return An array with new messages formated as Strings
+     * @return A String with new messages or "No new messages"
      */
-    public String[] getNewMessagesAsString() {
+    @GET
+    @Path("getNewMessagesAsString")
+    public String getNewMessagesAsString() {
         ShortMessage[] messages = getNewMessages();
         if (messages == null || messages.length == 0) {
-            return new String[] { "No new messages" };
+            return "No new messages";
         } else {
-            List<String> msgList = new ArrayList<>();
             SimpleDateFormat sdf = new SimpleDateFormat();
+            StringBuilder sb = new StringBuilder();
             for (ShortMessage sms : messages) {
-                StringBuilder sb = new StringBuilder();
                 sb.append(sdf.format(sms.getSendTimestamp().getTime()) + " from " + getAgentName(sms.getSenderId())
-                        + " to " + getAgentName(sms.getRecipientId()) + " : " + new String(sms.getMessage())
-                        + "<br/>\n");
-                msgList.add(sb.toString());
+                        + " to " + getAgentName(sms.getRecipientId()) + " : " + new String(sms.getMessage()) + "\n");
             }
-            String[] txtMessages = msgList.toArray(new String[0]);
-            return txtMessages;
+            return sb.toString();
         }
     }
 
@@ -212,6 +212,21 @@ public class ShortMessageService extends Service {
             }
         } catch (Exception e) {
             Context.logMessage(this, "Could not resolve agent id " + agentId);
+        }
+        return result;
+    }
+
+    /**
+     * Used by the RESTMapper
+     * 
+     * @return
+     */
+    public String getRESTMapping() {
+        String result = "";
+        try {
+            result = RESTMapper.getMethodsAsXML(this.getClass());
+        } catch (Exception e) {
+            Context.logError(this, "Couldn't get REST mapping for this class " + e);
         }
         return result;
     }
