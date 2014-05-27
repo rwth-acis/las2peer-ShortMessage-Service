@@ -118,7 +118,7 @@ function showResult(result)
 		text.innerHTML = result.value;
 	}
 	var div = document.getElementById("sms_messageList");
-	div.appendChild(text);
+	div.insertBefore(text, div.firstChild);
 }
 
 /**

@@ -4,7 +4,7 @@
 	<classpathentry kind="src" path="src/test/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="lib/las2peer-0.0.4.jar" sourcepath="/LAS2peer"/>
+	<classpathentry kind="lib" path="lib/las2peer-0.0.4.1.jar" sourcepath="/LAS2peer"/>
 	<classpathentry kind="lib" path="lib/i5-httpConnector-0.1.5.jar"/>
 	<classpathentry kind="output" path="tmp/classes"/>
 </classpath>

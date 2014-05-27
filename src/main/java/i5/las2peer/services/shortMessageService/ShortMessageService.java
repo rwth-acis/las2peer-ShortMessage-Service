@@ -6,6 +6,8 @@ import i5.las2peer.p2p.AgentNotKnownException;
 import i5.las2peer.persistency.Envelope;
 import i5.las2peer.security.Agent;
 import i5.las2peer.security.Context;
+import i5.las2peer.security.GroupAgent;
+import i5.las2peer.security.ServiceAgent;
 import i5.las2peer.security.UserAgent;
 
 import java.text.SimpleDateFormat;
@@ -40,8 +42,11 @@ public class ShortMessageService extends Service {
      * service properties with default values, can be overwritten with properties file
      * config/ShortMessageService.properties
      */
-    private long maxMessageLength = 140;
-    private String storageBaseName = "shortmessagestorage";
+    private long DEFAULT_MAXIMUM_MESSAGE_LENGTH = 140;
+    protected long maxMessageLength = DEFAULT_MAXIMUM_MESSAGE_LENGTH;
+
+    private String DEFAULT_STORAGE_BASENAME = "shortmessagestorage";
+    protected String storageBaseName = DEFAULT_STORAGE_BASENAME;
 
     /**
      * Constructor: Loads the properties file and sets the values.
@@ -161,26 +166,54 @@ public class ShortMessageService extends Service {
     }
 
     /**
-     * used in the web frontend to show new messages as Strings
+     * Used by the web frontend to show new messages as Strings
      * 
      * @return An array with new messages formated as Strings
      */
     public String[] getNewMessagesAsString() {
         ShortMessage[] messages = getNewMessages();
-        if (messages == null) {
+        if (messages == null || messages.length == 0) {
             return new String[] { "No new messages" };
         } else {
             List<String> msgList = new ArrayList<>();
             SimpleDateFormat sdf = new SimpleDateFormat();
             for (ShortMessage sms : messages) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(sdf.format(sms.getSendTimestamp().getTime()) + " from " + sms.getSenderId() + " to "
-                        + sms.getRecipientId() + " : " + new String(sms.getMessage()) + "<br/>\n");
+                sb.append(sdf.format(sms.getSendTimestamp().getTime()) + " from " + getAgentName(sms.getSenderId())
+                        + " to " + getAgentName(sms.getRecipientId()) + " : " + new String(sms.getMessage())
+                        + "<br/>\n");
                 msgList.add(sb.toString());
             }
             String[] txtMessages = msgList.toArray(new String[0]);
             return txtMessages;
         }
+    }
+
+    /**
+     * Gets the name for a specified agent id. For UserAgent's the login name, for ServiceAgent's the class name and for
+     * GroupAgent's the group name is retrieved.
+     * 
+     * @param agentId
+     *            The agent id that name should be retrieved
+     * @return Returns the agent name for the given agentId or the agentId as String if an error occurred.
+     */
+    protected String getAgentName(long agentId) {
+        String result = Long.toString(agentId);
+        try {
+            Agent agent = this.getActiveNode().getAgent(agentId);
+            if (agent != null) {
+                if (agent instanceof UserAgent) {
+                    result = ((UserAgent) agent).getLoginName();
+                } else if (agent instanceof ServiceAgent) {
+                    result = ((ServiceAgent) agent).getServiceClassName();
+                } else if (agent instanceof GroupAgent) {
+                    // FIXME return group name
+                }
+            }
+        } catch (Exception e) {
+            Context.logMessage(this, "Could not resolve agent id " + agentId);
+        }
+        return result;
     }
 
 }
