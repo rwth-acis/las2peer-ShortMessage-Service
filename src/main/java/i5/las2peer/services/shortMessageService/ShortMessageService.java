@@ -7,6 +7,7 @@ import i5.las2peer.persistency.Envelope;
 import i5.las2peer.restMapper.RESTMapper;
 import i5.las2peer.restMapper.annotations.GET;
 import i5.las2peer.restMapper.annotations.Path;
+import i5.las2peer.restMapper.annotations.PathParam;
 import i5.las2peer.security.Agent;
 import i5.las2peer.security.Context;
 import i5.las2peer.security.GroupAgent;
@@ -115,7 +116,9 @@ public class ShortMessageService extends Service {
      *            the login name or email address representing the recipient
      * @return success or error message
      */
-    public String sendMessage(String recipient, String message) {
+    @GET
+    @Path("sendMessage/{recipient}/{message}")
+    public String sendMessage(@PathParam("recipient") String recipient, @PathParam("message") String message) {
         if (recipient == null || recipient.isEmpty()) {
             return "No recipient specified!";
         }
