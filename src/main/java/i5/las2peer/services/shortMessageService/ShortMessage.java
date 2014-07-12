@@ -16,12 +16,8 @@ import java.util.GregorianCalendar;
 import rice.p2p.util.Base64;
 
 /**
- * 
- * <p>
  * Data class that is used by the {@link ShortMessageService} to transport messages.<br>
  * It contains the message itself as well as some meta-data that will be used to categorize this message.
- * 
- * @author Thomas Cujé
  * 
  */
 public class ShortMessage implements XmlAble {
@@ -81,7 +77,7 @@ public class ShortMessage implements XmlAble {
      * 
      * @return A byte array containing the actual message.
      */
-    public byte[] getMessage() {
+    public byte[] getContent() {
         return content;
     }
 

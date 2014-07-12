@@ -12,8 +12,6 @@ import java.util.ArrayList;
  * stored in the corresponding instance of this class. Additionally this class makes handling messages inside the
  * las2peer Envelope class a bit easier.
  * 
- * @author Thomas Cujé
- * 
  */
 public class ShortMessageBox implements Serializable {
 
