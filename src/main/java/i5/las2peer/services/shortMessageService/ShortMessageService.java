@@ -187,6 +187,27 @@ public class ShortMessageService extends Service {
 	}
 
 	/**
+	 * Clears all messages for the active agent inside the storage. This can't be undone!
+	 */
+	@GET
+	@Path("deleteShortMessages")
+	public void deleteShortMessages() {
+		try {
+			Agent owner = getActiveAgent();
+			Envelope env = getContext().getStoredObject(ShortMessageBox.class, STORAGE_BASENAME + owner.getId());
+			env.open(getAgent());
+			ShortMessageBox stored = env.getContent(ShortMessageBox.class);
+			stored.clear();
+			env.updateContent(stored);
+			env.addSignature(getAgent());
+			env.store();
+			env.close();
+		} catch (Exception e) {
+			Context.logError(this, "Can't clear messages from network storage! " + e);
+		}
+	}
+
+	/**
 	 * Gets the name for a specified agent id. For UserAgent's the login name, for ServiceAgent's the class name and for
 	 * GroupAgent's the group name is retrieved.
 	 * 
