@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+  <title>Short Message Service</title>
+  <link rel="stylesheet" href="./CSS/style.css" />	
+  <script src="./JS/ServiceAPI/moduleHelper.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="./JS/ServiceAPI/b64.js"></script>
+  <script src="./JS/ServiceAPI/serviceAPI.js"></script>
+  <script src="./JS/config.js"></script>
+  <script src="./JS/common.js"></script>
+  <script src="./JS/sms-viewer.js"></script>
+</head>
+<body>
+  <div id="main">
+    <div id="header">
+      <div class="title">Short-Messages</div> <div id="refreshMessages" class="refreshMessages">&#x21bb;</div>
+    </div>
+    <textarea id="content" readonly>
+    </textarea>
+    <div id="footer">
+      <form id="msg_form" type="submit" onsubmit="return false; sendMessage();">
+      agent:<input id="agent" type="text"/>
+      text:<input id="text" type="text"/>
+      <input id="send" type="submit" value="send"/>
+      <span id="hint">
+      </span>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

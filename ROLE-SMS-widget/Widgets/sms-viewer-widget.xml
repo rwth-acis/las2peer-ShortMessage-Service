@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Module>
+	<ModulePrefs
+		title="Message Selector"
+		description="Displays available messages"
+		author="Thomas Cujé"
+		author_email="cuje@dbis.rwth-aachen.de"
+		height="400"
+		width="400">
+		<Require feature="openapp"/>
+	</ModulePrefs>
+	<Content>
+		<![CDATA[
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+    <title>Short-Messages</title>
+    <link rel="stylesheet" href="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/CSS/style.css" />	
+    <script src="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/JS/ServiceAPI/moduleHelper.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/JS/ServiceAPI/b64.js"></script>
+    <script src="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/JS/ServiceAPI/serviceAPI.js"></script>
+    <script src="http://open-app.googlecode.com/files/openapp.js"></script>
+    <script src="http://dbis.rwth-aachen.de/gadgets/iwc/lib/iwc.js"></script>    
+    <script src="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/JS/ServiceAPI/widgetAPI.js"></script>
+    <script src="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/JS/config.js"></script>
+    <script src="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/JS/common.js"></script>
+    <script src="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/JS/sms-viewer.js"></script>
+</head>
+<body>
+  <div id="main">
+    <div id="header">
+      <div class="title">Short-Messages</div> <div id="refreshMessages" class="refreshMessages">&#x21bb;</div>
+    </div>
+    <textarea id="content" readonly>
+    </textarea>
+    <div id="footer">
+      <form id="msg_form" type="submit" onsubmit="return false; sendMessage();">
+      agent:<input id="agent" type="text"/>
+      text:<input id="text" type="text"/>
+      <input id="send" type="submit" value="send"/>
+      <span id="hint">
+      </span>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
+	]]>
+	</Content>
+</Module>

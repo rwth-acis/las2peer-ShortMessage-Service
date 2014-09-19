@@ -180,7 +180,7 @@ public class ShortMessageService extends Service {
 			StringBuilder sb = new StringBuilder();
 			for (ShortMessage sms : messages) {
 				sb.append(sdf.format(sms.getSendTimestamp().getTime()) + " from " + getAgentName(sms.getSenderId())
-						+ " to " + getAgentName(sms.getRecipientId()) + " : " + new String(sms.getContent()) + "\n");
+						+ " to " + getAgentName(sms.getRecipientId()) + ": " + new String(sms.getContent()) + "\n");
 			}
 			return sb.toString();
 		}
