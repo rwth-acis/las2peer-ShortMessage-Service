@@ -1,6 +1,5 @@
 package i5.las2peer.services.shortMessageService;
 
-import i5.las2peer.communication.Message;
 import i5.las2peer.persistency.MalformedXMLException;
 import i5.las2peer.security.Context;
 
@@ -34,7 +33,7 @@ public class ShortMessageBox implements Serializable {
      * @param msg
      *            Message that should be stored.
      */
-    public void addMessage(Message msg) {
+    public void addMessage(ShortMessage msg) {
         messages.add(msg.toXmlString());
     }
 
@@ -43,17 +42,17 @@ public class ShortMessageBox implements Serializable {
      * 
      * @return Returns an array containing all messages of this box.
      */
-    public Message[] getMessages() {
-        ArrayList<Message> result = new ArrayList<Message>(messages.size());
+    public ShortMessage[] getMessages() {
+        ArrayList<ShortMessage> result = new ArrayList<>(messages.size());
         for (String xml : messages) {
             try {
-                Message msg = Message.createFromXml(xml);
+                ShortMessage msg = ShortMessage.createFromXml(xml);
                 result.add(msg);
             } catch (MalformedXMLException e) {
                 Context.logError(this, "Can't parse Message from xml '" + xml + "' " + e);
             }
         }
-        Message[] array = result.toArray(new Message[0]);
+        ShortMessage[] array = result.toArray(new ShortMessage[0]);
         return array;
     }
 

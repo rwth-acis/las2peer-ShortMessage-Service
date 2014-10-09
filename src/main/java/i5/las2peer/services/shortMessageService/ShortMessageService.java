@@ -1,7 +1,6 @@
 package i5.las2peer.services.shortMessageService;
 
 import i5.las2peer.api.Service;
-import i5.las2peer.communication.Message;
 import i5.las2peer.p2p.AgentNotKnownException;
 import i5.las2peer.persistency.Envelope;
 import i5.las2peer.restMapper.RESTMapper;
@@ -75,7 +74,6 @@ public class ShortMessageService extends Service {
 		msg.setSendTimestamp(new GregorianCalendar());
 		// persist message to recipient storage
 		try {
-			Message lasMsg = new Message(sendingAgent, receivingAgent, msg);
 			Envelope env = null;
 			try {
 				env = getContext().getStoredObject(ShortMessageBox.class, STORAGE_BASENAME + receivingAgent.getId());
@@ -88,7 +86,7 @@ public class ShortMessageService extends Service {
 			// get messages from storage
 			ShortMessageBox stored = env.getContent(ShortMessageBox.class);
 			// add new message
-			stored.addMessage(lasMsg);
+			stored.addMessage(msg);
 			env.updateContent(stored);
 			// close envelope
 			env.addSignature(getAgent());
@@ -149,12 +147,7 @@ public class ShortMessageService extends Service {
 			env.open(getAgent());
 			ShortMessageBox stored = env.getContent(ShortMessageBox.class);
 			Context.logMessage(this, "Loaded " + stored.size() + " messages from network storage");
-			Message[] messages = stored.getMessages();
-			ShortMessage[] result = new ShortMessage[stored.size()];
-			for (int n = 0; n < messages.length; n++) {
-				messages[n].open(owner, getActiveNode());
-				result[n] = (ShortMessage) messages[n].getContent();
-			}
+			ShortMessage[] result = stored.getMessages();
 			env.close();
 			return result;
 		} catch (Exception e) {
