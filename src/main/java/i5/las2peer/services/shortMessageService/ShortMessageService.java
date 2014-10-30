@@ -52,15 +52,15 @@ public class ShortMessageService extends Service {
 	}
 
 	/**
-	 * Sends a {@link ShortMessage} to a recipient specified by his agent.
+	 * Sends a {@link ShortMessage} to a recipient specified by his agent id.
 	 * 
-	 * @param receivingAgent
-	 *            the agent representing the recipient
+	 * @param receivingAgentId
+	 *            the id of the agent representing the recipient
 	 * @param message
 	 *            the actual message text as {@link String}
 	 * @return success or error message
 	 */
-	public String sendShortMessage(UserAgent receivingAgent, String message) {
+	public String sendShortMessage(long receivingAgentId, String message) {
 		// validate message
 		if (message == null || message.isEmpty()) {
 			return "Message can not be empty!";
@@ -70,16 +70,16 @@ public class ShortMessageService extends Service {
 		}
 		// create short message
 		UserAgent sendingAgent = (UserAgent) getActiveAgent();
-		ShortMessage msg = new ShortMessage(sendingAgent.getId(), receivingAgent.getId(), message);
+		ShortMessage msg = new ShortMessage(sendingAgent.getId(), receivingAgentId, message);
 		msg.setSendTimestamp(new GregorianCalendar());
 		// persist message to recipient storage
 		try {
 			Envelope env = null;
 			try {
-				env = getContext().getStoredObject(ShortMessageBox.class, STORAGE_BASENAME + receivingAgent.getId());
+				env = getContext().getStoredObject(ShortMessageBox.class, STORAGE_BASENAME + receivingAgentId);
 			} catch (Exception e) {
 				Context.logMessage(this, "Network storage not found. Creating new one. " + e);
-				env = Envelope.createClassIdEnvelope(new ShortMessageBox(1), STORAGE_BASENAME + receivingAgent.getId(),
+				env = Envelope.createClassIdEnvelope(new ShortMessageBox(1), STORAGE_BASENAME + receivingAgentId,
 						getAgent());
 			}
 			env.open(getAgent());
@@ -126,12 +126,7 @@ public class ShortMessageService extends Service {
 						+ e2.getMessage();
 			}
 		}
-		try {
-			UserAgent receivingAgent = (UserAgent) getActiveNode().getAgent(receiverId);
-			return sendShortMessage(receivingAgent, message);
-		} catch (AgentNotKnownException e) {
-			return "There exists no agent with id '" + receiverId + "'!";
-		}
+		return sendShortMessage(receiverId, message);
 	}
 
 	/**

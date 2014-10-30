@@ -1,4 +1,4 @@
 <las2peerNode>
-	<adminEmail>cuje@dbis.rwth-aachen.de</adminEmail>
+	<adminEmail>example@example.org</adminEmail>
 	<description>This Node hosts the las2peer ShortMessageService</description>
 </las2peerNode>
