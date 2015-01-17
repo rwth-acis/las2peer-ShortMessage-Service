@@ -213,7 +213,7 @@ public class ShortMessageService extends Service {
 				} else if (agent instanceof ServiceAgent) {
 					result = ((ServiceAgent) agent).getServiceClassName();
 				} else if (agent instanceof GroupAgent) {
-					// TODO return group name
+					result = ((GroupAgent) agent).getName();
 				}
 			}
 		} catch (Exception e) {

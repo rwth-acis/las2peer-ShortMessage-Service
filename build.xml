@@ -113,14 +113,6 @@
 				<attribute name="Library-SymbolicName" value="i5.las2peer.services.shortMessageService" />
 			</manifest>
 		</jar>
-		<!-- Copy to lib folder to enable working with L2PNodeLauncher !-->
-		<jar jarfile="${lib}/i5.las2peer.services.shortMessageService-${ShortMessageService.version}.jar">
-			<fileset dir="${tmp.classes}" includes="i5/las2peer/services/shortMessageService/**" />
-			<manifest>
-				<attribute name="Library-Version" value="${ShortMessageService.version}" />
-				<attribute name="Library-SymbolicName" value="i5.las2peer.services.shortMessageService" />
-			</manifest>
-		</jar>
 	</target>
 
 	<target name="javadoc" depends="init_doc" description="build java doc">
