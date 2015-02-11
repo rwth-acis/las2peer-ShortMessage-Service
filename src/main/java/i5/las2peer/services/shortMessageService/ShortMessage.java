@@ -7,6 +7,7 @@ import i5.simpleXML.Element;
 import i5.simpleXML.Parser;
 import i5.simpleXML.XMLSyntaxException;
 
+import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -20,9 +21,10 @@ import rice.p2p.util.Base64;
  * It contains the message itself as well as some meta-data that will be used to categorize this message.
  * 
  */
-public class ShortMessage implements XmlAble {
+public class ShortMessage implements XmlAble, Serializable {
 
-    private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy;MM;dd;HH;mm;ss;Z");
+	private static final long serialVersionUID = 1L;
+	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy;MM;dd;HH;mm;ss;Z");
 
     /** agent id of the agent who send the message **/
     private final long senderId;
