@@ -43,7 +43,7 @@ public class TripleNodeRMITest {
 		bootstrap.launch();
 		nodes.add(bootstrap);
 		for (int i = 1; i < numOfNodes; i++) {
-			PastryNodeImpl n = new PastryNodeImpl(30000 + i, "137.226.111.75:30000", STORAGE_MODE.memory, false, null,
+			PastryNodeImpl n = new PastryNodeImpl(30000 + i, "localhost:30000", STORAGE_MODE.memory, false, null,
 					null);
 			n.setLogfilePrefix("./log/l2p-node_");
 			n.launch();
