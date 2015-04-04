@@ -5,7 +5,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="lib/las2peer-0.3-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="lib/i5-httpConnector-0.1.6.jar"/>
 	<classpathentry kind="lib" path="lib/las2peer-web-connector-0.3-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="lib/junit-4.11.jar"/>
 	<classpathentry kind="lib" path="lib/mail-1.4.7.jar"/>

@@ -16,6 +16,9 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mpisws.p2p.transport.multiaddress.MultiInetSocketAddress;
+
+import rice.pastry.socket.SocketPastryNodeFactory;
 
 /**
  * This testcase checks if the service can be used inside a very small network consisting of 3 nodes. The service is
@@ -41,10 +44,13 @@ public class TripleNodeRMITest {
 		bootstrap = new PastryNodeImpl(30000, null, STORAGE_MODE.memory, false, null, null);
 		bootstrap.setLogfilePrefix("./log/l2p-node_");
 		bootstrap.launch();
+		// get the address the boostrap node listens to
+		MultiInetSocketAddress addr = (MultiInetSocketAddress) bootstrap.getPastryNode().getVars()
+				.get(SocketPastryNodeFactory.PROXY_ADDRESS);
+		String strAddr = addr.getAddress(0).getHostString();
 		nodes.add(bootstrap);
 		for (int i = 1; i < numOfNodes; i++) {
-			PastryNodeImpl n = new PastryNodeImpl(30000 + i, "localhost:30000", STORAGE_MODE.memory, false, null,
-					null);
+			PastryNodeImpl n = new PastryNodeImpl(30000 + i, strAddr + ":30000", STORAGE_MODE.memory, false, null, null);
 			n.setLogfilePrefix("./log/l2p-node_");
 			n.launch();
 			nodes.add(n);
