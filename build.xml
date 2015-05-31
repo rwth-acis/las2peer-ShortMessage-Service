@@ -67,7 +67,7 @@
 
 	<!-- compilation -->
 	<target name="compile_main" depends="init_compile">
-		<javac srcdir="${src.main}" destdir="${tmp.classes}" classpathref="libraries" source="1.7" target="1.7" debug="on" encoding="UTF-8" includeantruntime="false" />
+		<javac srcdir="${src.main}" destdir="${tmp.classes}" classpathref="libraries" debug="on" encoding="UTF-8" includeantruntime="false" />
 		<copy todir="${tmp.classes}">
 			<fileset dir="${src.main}">
 				<include name="**/*.xml" />
@@ -76,7 +76,7 @@
 	</target>
 
 	<target name="compile_junit" depends="init_compile">
-		<javac srcdir="${src.junit}" destdir="${tmp.junit}" classpath="${tmp.classes}:${lib.junit}" classpathref="libraries" source="1.7" target="1.7" debug="on" encoding="UTF-8" includeantruntime="false" />
+		<javac srcdir="${src.junit}" destdir="${tmp.junit}" classpath="${tmp.classes}:${lib.junit}" classpathref="libraries" debug="on" encoding="UTF-8" includeantruntime="false" />
 		<copy todir="${tmp.junit}">
 			<fileset dir="${src.junit}">
 				<include name="**/*.xml" />
@@ -121,50 +121,50 @@
 			</packageset>
 			<bottom>
 				<![CDATA[<p class="bottom">Copyright &#169; 2014 by Thomas Cujé, Aachen, Germany. All Rights Reserved.</p>]]></bottom>
-		</javadoc>
-	</target>
+	</javadoc>
+</target>
 
-	<!--   JUNIT testing -->
-	<target name="junit" depends="junit_tests, junit_clean" description="runs all junit tests for this project" />
+<!--   JUNIT testing -->
+<target name="junit" depends="junit_tests, junit_clean" description="runs all junit tests for this project" />
 
-	<target name="init_junit" depends="init_general">
-		<mkdir dir="${junit.report}" />
-		<mkdir dir="log" />
-	</target>
+<target name="init_junit" depends="init_general">
+	<mkdir dir="${junit.report}" />
+	<mkdir dir="log" />
+</target>
 
-	<target name="junit_clean">
-		<delete dir="${tmp.junit}" />
-	</target>
+<target name="junit_clean">
+	<delete dir="${tmp.junit}" />
+</target>
 
-	<target name="junit_tests" depends="init_junit, compile_all">
-		<junit fork="yes" haltonerror="yes" haltonfailure="yes" printsummary="yes">
-			<classpath>
-				<pathelement path="${tmp.classes}" />
-				<pathelement path="${tmp.junit}" />
-				<pathelement path="${lib.junit}" />
-				<path refid="libraries" />
-			</classpath>
-			<formatter type="plain" />
-			<batchtest fork="yes" todir="${junit.report}">
-				<fileset dir="${tmp.junit}">
-					<include name="**/*Test.class" />
-				</fileset>
-			</batchtest>
-		</junit>
-	</target>
+<target name="junit_tests" depends="init_junit, compile_all">
+	<junit fork="yes" haltonerror="yes" haltonfailure="yes" printsummary="yes">
+		<classpath>
+			<pathelement path="${tmp.classes}" />
+			<pathelement path="${tmp.junit}" />
+			<pathelement path="${lib.junit}" />
+			<path refid="libraries" />
+		</classpath>
+		<formatter type="plain" />
+		<batchtest fork="yes" todir="${junit.report}">
+			<fileset dir="${tmp.junit}">
+				<include name="**/*Test.class" />
+			</fileset>
+		</batchtest>
+	</junit>
+</target>
 
-	<!-- general cleanup; don't run this if you want to see unit test results or logging data -->
-	<target name="clean" description="removes temporary files and direcotries">
-		<delete dir="${tmp}" />
-		<delete dir="${export}" />
-		<delete dir="${log}" />
-		<delete dir="node-storage" />
-		<delete>
-			<fileset dir="${service}" includes="i5.las2peer.services.shortMessageService-*.jar" />
-			<fileset dir="${lib}" includes="i5.las2peer.services.shortMessageService-*.jar" />
-		</delete>
-	</target>
+<!-- general cleanup; don't run this if you want to see unit test results or logging data -->
+<target name="clean" description="removes temporary files and direcotries">
+	<delete dir="${tmp}" />
+	<delete dir="${export}" />
+	<delete dir="${log}" />
+	<delete dir="node-storage" />
+	<delete>
+		<fileset dir="${service}" includes="i5.las2peer.services.shortMessageService-*.jar" />
+		<fileset dir="${lib}" includes="i5.las2peer.services.shortMessageService-*.jar" />
+	</delete>
+</target>
 
-	<target name="all" depends="ShortMessageService_jar, junit, javadoc" description="build all targets" />
+<target name="all" depends="ShortMessageService_jar, junit, javadoc" description="build all targets" />
 
 </project>
