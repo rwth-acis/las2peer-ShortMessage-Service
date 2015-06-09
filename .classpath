@@ -4,8 +4,8 @@
 	<classpathentry kind="src" path="src/test/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="lib/las2peer-0.3-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="lib/las2peer-web-connector-0.3-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="lib/las2peer-0.4-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="lib/las2peer-web-connector-0.4-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="lib/junit-4.11.jar"/>
 	<classpathentry kind="lib" path="lib/mail-1.4.7.jar"/>
 	<classpathentry kind="lib" path="lib/nimbus-jose-jwt-2.26.jar"/>
@@ -18,7 +18,7 @@
 	<classpathentry kind="lib" path="lib/jcip-annotations-1.0.jar"/>
 	<classpathentry kind="lib" path="lib/json-smart-1.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/lang-tag-1.4.jar"/>
-	<classpathentry kind="lib" path="lib/las2peer-rest-mapper-0.3-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="lib/las2peer-rest-mapper-0.4-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="lib/json-simple-1.1.jar"/>
 	<classpathentry kind="output" path="tmp/classes"/>
 </classpath>
