@@ -20,5 +20,5 @@
 	<classpathentry kind="lib" path="lib/lang-tag-1.4.jar"/>
 	<classpathentry kind="lib" path="lib/las2peer-rest-mapper-0.4-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="lib/json-simple-1.1.jar"/>
-	<classpathentry kind="output" path="tmp/classes"/>
+	<classpathentry kind="output" path="outout"/>
 </classpath>
