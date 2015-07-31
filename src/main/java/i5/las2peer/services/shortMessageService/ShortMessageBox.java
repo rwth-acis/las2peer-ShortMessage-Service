@@ -1,10 +1,10 @@
 package i5.las2peer.services.shortMessageService;
 
-import i5.las2peer.persistency.MalformedXMLException;
-import i5.las2peer.security.Context;
-
 import java.io.Serializable;
 import java.util.ArrayList;
+
+import i5.las2peer.persistency.MalformedXMLException;
+import i5.las2peer.security.Context;
 
 /**
  * This class represents the message inbox for an user agent. Each time a message is send to an agent the message is

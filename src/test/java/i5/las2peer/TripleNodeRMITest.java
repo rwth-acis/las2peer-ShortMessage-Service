@@ -1,14 +1,6 @@
 package i5.las2peer;
 
 import static org.junit.Assert.assertEquals;
-import i5.las2peer.p2p.PastryNodeImpl;
-import i5.las2peer.p2p.PastryNodeImpl.STORAGE_MODE;
-import i5.las2peer.security.Mediator;
-import i5.las2peer.security.ServiceAgent;
-import i5.las2peer.security.UserAgent;
-import i5.las2peer.services.shortMessageService.ShortMessage;
-import i5.las2peer.services.shortMessageService.ShortMessageService;
-import i5.las2peer.tools.ColoredOutput;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -18,6 +10,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mpisws.p2p.transport.multiaddress.MultiInetSocketAddress;
 
+import i5.las2peer.p2p.PastryNodeImpl;
+import i5.las2peer.p2p.PastryNodeImpl.STORAGE_MODE;
+import i5.las2peer.security.Mediator;
+import i5.las2peer.security.ServiceAgent;
+import i5.las2peer.security.UserAgent;
+import i5.las2peer.services.shortMessageService.ShortMessage;
+import i5.las2peer.services.shortMessageService.ShortMessageService;
+import i5.las2peer.tools.ColoredOutput;
 import rice.pastry.socket.SocketPastryNodeFactory;
 
 /**

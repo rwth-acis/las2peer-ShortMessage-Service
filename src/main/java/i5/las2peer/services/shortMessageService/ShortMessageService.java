@@ -1,20 +1,21 @@
 package i5.las2peer.services.shortMessageService;
 
+import java.text.SimpleDateFormat;
+import java.util.GregorianCalendar;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+
 import i5.las2peer.api.Service;
 import i5.las2peer.p2p.AgentNotKnownException;
 import i5.las2peer.persistency.Envelope;
 import i5.las2peer.restMapper.RESTMapper;
-import i5.las2peer.restMapper.annotations.GET;
-import i5.las2peer.restMapper.annotations.Path;
-import i5.las2peer.restMapper.annotations.PathParam;
 import i5.las2peer.security.Agent;
 import i5.las2peer.security.Context;
 import i5.las2peer.security.GroupAgent;
 import i5.las2peer.security.ServiceAgent;
 import i5.las2peer.security.UserAgent;
-
-import java.text.SimpleDateFormat;
-import java.util.GregorianCalendar;
 
 /**
  * This is a middleware service for LAS2peer that provides methods to send short messages via a LAS2peer network. It is
