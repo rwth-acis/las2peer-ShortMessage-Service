@@ -4,8 +4,6 @@
 	<property name="src.junit" location="src/test/java" />
 
 	<property name="tmp" location="tmp" />
-	<property name="log" location="log" />
-
 	<property name="tmp.classes" location="${tmp}/classes" />
 	<property name="tmp.junit" location="${tmp}/test" />
 
@@ -17,6 +15,8 @@
 
 	<property name="lib" location="lib" />
 	<property name="service" location="service" />
+
+	<property name="main-class" value="i5.las2peer.tools.L2pNodeLauncher" />
 
 	<path id="libraries">
 		<fileset dir="${lib}">
@@ -57,7 +57,6 @@
 		<mkdir dir="${src.junit}" />
 		<mkdir dir="${tmp}" />
 		<mkdir dir="${export}" />
-		<mkdir dir="${log}" />
 	</target>
 
 	<target name="init-compile" depends="get-deps, init-general">
@@ -91,18 +90,11 @@
 			<manifest>
 				<attribute name="Library-Version" value="${ShortMessageService.version}" />
 				<attribute name="Library-SymbolicName" value="i5.las2peer.services.shortMessageService" />
+				<attribute name="Main-Class" value="${main-class}" />
 			</manifest>
 		</jar>
 		<!-- copy to service folder to enable working with L2PNodeLauncher -->
 		<jar jarfile="${service}/i5.las2peer.services.shortMessageService-${ShortMessageService.version}.jar">
-			<fileset dir="${tmp.classes}" includes="i5/las2peer/services/shortMessageService/**" />
-			<manifest>
-				<attribute name="Library-Version" value="${ShortMessageService.version}" />
-				<attribute name="Library-SymbolicName" value="i5.las2peer.services.shortMessageService" />
-			</manifest>
-		</jar>
-		<!-- copy to class path under ./lib/ folder -->
-		<jar jarfile="${lib}/i5.las2peer.services.shortMessageService-${ShortMessageService.version}.jar">
 			<fileset dir="${tmp.classes}" includes="i5/las2peer/services/shortMessageService/**" />
 			<manifest>
 				<attribute name="Library-Version" value="${ShortMessageService.version}" />
@@ -118,14 +110,13 @@
 				<include name="i5/las2peer/**" />
 			</packageset>
 			<bottom>
-				<![CDATA[<p class="bottom">Copyright &#169; 2014 by Thomas Cujé, Aachen, Germany. All Rights Reserved.</p>]]></bottom>
+				<![CDATA[<p class="bottom">Copyright &#169; 2015 by Thomas Cujé, Aachen, Germany. All Rights Reserved.</p>]]></bottom>
 	</javadoc>
 </target>
 
 <!--   JUNIT testing -->
 <target name="init-junit" depends="init-general">
 	<mkdir dir="${junit.report}" />
-	<mkdir dir="log" />
 </target>
 
 <target name="junit-clean">
@@ -149,14 +140,11 @@
 	</junit>
 </target>
 
-<!-- general cleanup; don't run this if you want to see unit test results or logging data -->
-<target name="clean" description="clears all data from the project, including logs, user data and compiled classes">
-<delete dir="${log}" failonerror="false" />
-<delete dir="node-storage" failonerror="false" />
-<delete dir="${service}" failonerror="false" />
-<delete dir="${tmp}" failonerror="false" />
-<delete dir="${export}" failonerror="false" />
-<delete dir="${lib}" failonerror="false" />
+<target name="clean" description="clean">
+	<delete dir="${tmp}" />
+	<delete dir="${export}" />
+	<delete dir="${lib}" />
+	<delete dir="${service}" />
 </target>
 
 <target name="all" depends="jar, junit, javadoc" description="build all targets" />
