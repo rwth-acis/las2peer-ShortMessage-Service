@@ -42,7 +42,6 @@ public class TripleNodeRMITest {
 	private void startNetwork(int numOfNodes) throws Exception {
 		nodes = new ArrayList<>(numOfNodes);
 		bootstrap = new PastryNodeImpl(30000, null, STORAGE_MODE.memory, false, null, null);
-		bootstrap.setLogfilePrefix("./log/l2p-node_");
 		bootstrap.launch();
 		// get the address the boostrap node listens to
 		MultiInetSocketAddress addr = (MultiInetSocketAddress) bootstrap.getPastryNode().getVars()
@@ -51,7 +50,6 @@ public class TripleNodeRMITest {
 		nodes.add(bootstrap);
 		for (int i = 1; i < numOfNodes; i++) {
 			PastryNodeImpl n = new PastryNodeImpl(30000 + i, strAddr + ":30000", STORAGE_MODE.memory, false, null, null);
-			n.setLogfilePrefix("./log/l2p-node_");
 			n.launch();
 			nodes.add(n);
 		}
@@ -70,7 +68,7 @@ public class TripleNodeRMITest {
 
 		// create agents
 		System.out.println("creating user agents...");
-		ServiceAgent service = ServiceAgent.generateNewAgent(ShortMessageService.class.getName(), "test-service-pass");
+		ServiceAgent service = ServiceAgent.createServiceAgent(ShortMessageService.class.getName(), "test-service-pass");
 		UserAgent userA = UserAgent.createUserAgent("test-pass-a");
 		UserAgent userB = UserAgent.createUserAgent("test-pass-b");
 
