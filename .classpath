@@ -7,5 +7,5 @@
 	<classpathentry kind="lib" path="lib/las2peer-0.5-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="lib/las2peer-rest-mapper-0.5-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="lib/las2peer-web-connector-0.5-SNAPSHOT.jar"/>
-	<classpathentry kind="output" path="outout"/>
+	<classpathentry kind="output" path="output"/>
 </classpath>
