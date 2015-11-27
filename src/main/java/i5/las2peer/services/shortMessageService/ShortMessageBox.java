@@ -14,62 +14,60 @@ import i5.las2peer.security.Context;
  */
 public class ShortMessageBox implements Serializable {
 
-    private static final long serialVersionUID = -300617519857096303L;
-    private final ArrayList<String> messages;
+	private static final long serialVersionUID = -300617519857096303L;
+	private final ArrayList<String> messages;
 
-    /**
-     * Constructor with initial capacity parameter for the internal storage.
-     * 
-     * @param initialCapacity
-     *            Used to initialize the internal storage.
-     */
-    public ShortMessageBox(int initialCapacity) {
-        messages = new ArrayList<>(initialCapacity);
-    }
+	/**
+	 * Constructor with initial capacity parameter for the internal storage.
+	 * 
+	 * @param initialCapacity Used to initialize the internal storage.
+	 */
+	public ShortMessageBox(int initialCapacity) {
+		messages = new ArrayList<>(initialCapacity);
+	}
 
-    /**
-     * Adds a message to this inbox.
-     * 
-     * @param msg
-     *            Message that should be stored.
-     */
-    public void addMessage(ShortMessage msg) {
-        messages.add(msg.toXmlString());
-    }
+	/**
+	 * Adds a message to this inbox.
+	 * 
+	 * @param msg Message that should be stored.
+	 */
+	public void addMessage(ShortMessage msg) {
+		messages.add(msg.toXmlString());
+	}
 
-    /**
-     * Get all messages from this instance.
-     * 
-     * @return Returns an array containing all messages of this box.
-     */
-    public ShortMessage[] getMessages() {
-        ArrayList<ShortMessage> result = new ArrayList<>(messages.size());
-        for (String xml : messages) {
-            try {
-                ShortMessage msg = ShortMessage.createFromXml(xml);
-                result.add(msg);
-            } catch (MalformedXMLException e) {
-                Context.logError(this, "Can't parse Message from xml '" + xml + "' " + e);
-            }
-        }
-        ShortMessage[] array = result.toArray(new ShortMessage[0]);
-        return array;
-    }
+	/**
+	 * Get all messages from this instance.
+	 * 
+	 * @return Returns an array containing all messages of this box.
+	 */
+	public ShortMessage[] getMessages() {
+		ArrayList<ShortMessage> result = new ArrayList<>(messages.size());
+		for (String xml : messages) {
+			try {
+				ShortMessage msg = ShortMessage.createFromXml(xml);
+				result.add(msg);
+			} catch (MalformedXMLException e) {
+				Context.logError(this, "Can't parse Message from xml '" + xml + "' " + e);
+			}
+		}
+		ShortMessage[] array = result.toArray(new ShortMessage[0]);
+		return array;
+	}
 
-    /**
-     * Get the number of Messages stored inside.
-     * 
-     * @return Returns the number of Messages stored inside.
-     */
-    public int size() {
-        return messages.size();
-    }
+	/**
+	 * Get the number of Messages stored inside.
+	 * 
+	 * @return Returns the number of Messages stored inside.
+	 */
+	public int size() {
+		return messages.size();
+	}
 
-    /**
-     * Deletes all Messages and empties the internal storage.
-     */
-    public void clear() {
-        messages.clear();
-    }
+	/**
+	 * Deletes all Messages and empties the internal storage.
+	 */
+	public void clear() {
+		messages.clear();
+	}
 
 }

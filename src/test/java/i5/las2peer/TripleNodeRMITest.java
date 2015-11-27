@@ -23,10 +23,10 @@ import rice.pastry.socket.SocketPastryNodeFactory;
 /**
  * This testcase checks if the service can be used inside a very small network consisting of 3 nodes. The service is
  * deployed at the first node. Then user a connects to the second node and sends a meessage to user b, which is not
- * connected yet. Sending messages to non connected users is tested this way. In the next step user b connects to
- * the third node and tries to read the message earlier send from user a and stored in the network. While user b is
- * now online user a sends another message and user b tries to receive it again. Last but not least user a
- * disconnects from the network and user b checks if his messages are still available.
+ * connected yet. Sending messages to non connected users is tested this way. In the next step user b connects to the
+ * third node and tries to read the message earlier send from user a and stored in the network. While user b is now
+ * online user a sends another message and user b tries to receive it again. Last but not least user a disconnects from
+ * the network and user b checks if his messages are still available.
  *
  */
 public class TripleNodeRMITest {
@@ -49,7 +49,8 @@ public class TripleNodeRMITest {
 		String strAddr = addr.getAddress(0).getHostString();
 		nodes.add(bootstrap);
 		for (int i = 1; i < numOfNodes; i++) {
-			PastryNodeImpl n = new PastryNodeImpl(30000 + i, strAddr + ":30000", STORAGE_MODE.memory, false, null, null);
+			PastryNodeImpl n = new PastryNodeImpl(30000 + i, strAddr + ":30000", STORAGE_MODE.memory, false, null,
+					null);
 			n.launch();
 			nodes.add(n);
 		}
@@ -68,7 +69,8 @@ public class TripleNodeRMITest {
 
 		// create agents
 		System.out.println("creating user agents...");
-		ServiceAgent service = ServiceAgent.createServiceAgent(ShortMessageService.class.getName(), "test-service-pass");
+		ServiceAgent service = ServiceAgent.createServiceAgent(ShortMessageService.class.getName(),
+				"test-service-pass");
 		UserAgent userA = UserAgent.createUserAgent("test-pass-a");
 		UserAgent userB = UserAgent.createUserAgent("test-pass-b");
 
@@ -85,8 +87,8 @@ public class TripleNodeRMITest {
 
 		// UserA send first message to UserB
 		System.out.println("user a sending first message to user b");
-		mediatorA.invoke(ShortMessageService.class.getName(), "sendShortMessage", new Serializable[] { userB.getId(),
-				"First hello world to B from A" }, true);
+		mediatorA.invoke(ShortMessageService.class.getName(), "sendShortMessage",
+				new Serializable[] { userB.getId(), "First hello world to B from A" }, true);
 
 		// UserB login at node 2
 		System.out.println("user b login at node 2");
@@ -100,8 +102,8 @@ public class TripleNodeRMITest {
 		assertEquals(messages1.length, 1);
 
 		// UserA send second message to UserB
-		mediatorA.invoke(ShortMessageService.class.getName(), "sendShortMessage", new Serializable[] { userB.getId(),
-				"Second hello world to B from A" }, true);
+		mediatorA.invoke(ShortMessageService.class.getName(), "sendShortMessage",
+				new Serializable[] { userB.getId(), "Second hello world to B from A" }, true);
 
 		// verify UserB received two messages
 		ShortMessage[] messages2 = (ShortMessage[]) mediatorB.invoke(ShortMessageService.class.getName(),

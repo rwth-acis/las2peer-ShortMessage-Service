@@ -55,10 +55,8 @@ public class ShortMessageService extends Service {
 	/**
 	 * Sends a {@link ShortMessage} to a recipient specified by his agent id.
 	 * 
-	 * @param receivingAgentId
-	 *            the id of the agent representing the recipient
-	 * @param message
-	 *            the actual message text as {@link String}
+	 * @param receivingAgentId the id of the agent representing the recipient
+	 * @param message the actual message text as {@link String}
 	 * @return success or error message
 	 */
 	public String sendShortMessage(long receivingAgentId, String message) {
@@ -88,6 +86,7 @@ public class ShortMessageService extends Service {
 			ShortMessageBox stored = env.getContent(ShortMessageBox.class);
 			// add new message
 			stored.addMessage(msg);
+			// FIXME is this necessary? Maybe just make this envelope not updateable
 			env.updateContent(stored);
 			// close envelope
 			env.addSignature(getAgent());
@@ -104,10 +103,8 @@ public class ShortMessageService extends Service {
 	/**
 	 * Sends a {@link ShortMessage} to a recipient specified by login or email.
 	 * 
-	 * @param message
-	 *            the actual message text as {@link String}
-	 * @param recipient
-	 *            the login name or email address representing the recipient
+	 * @param message the actual message text as {@link String}
+	 * @param recipient the login name or email address representing the recipient
 	 * @return success or error message
 	 */
 	@GET
@@ -200,8 +197,7 @@ public class ShortMessageService extends Service {
 	 * Gets the name for a specified agent id. For UserAgent's the login name, for ServiceAgent's the class name and for
 	 * GroupAgent's the group name is retrieved.
 	 * 
-	 * @param agentId
-	 *            The agent id that name should be retrieved
+	 * @param agentId The agent id that name should be retrieved
 	 * @return Returns the agent name for the given agentId or the agentId as String if an error occurred.
 	 */
 	protected String getAgentName(long agentId) {

@@ -38,12 +38,9 @@ public class ShortMessage implements XmlAble, Serializable {
 	 * Constructor for a {@link ShortMessage}. Will be called by the {@link ShortMessageService} before a message is
 	 * send. Since the message is base64 encoded even an image could be used as message.
 	 * 
-	 * @param agentIdFrom
-	 *            user agent id who send the message
-	 * @param agentIdto
-	 *            user agent id who should receive the message
-	 * @param message
-	 *            the message itself as byte array
+	 * @param agentIdFrom user agent id who send the message
+	 * @param agentIdto user agent id who should receive the message
+	 * @param message the message itself as byte array
 	 */
 	public ShortMessage(long agentIdFrom, long agentIdTo, byte[] message) {
 		senderId = agentIdFrom;
@@ -86,8 +83,7 @@ public class ShortMessage implements XmlAble, Serializable {
 	 * Sets the timestamp this {@link ShortMessage} was send. This function should be called immediately before sending
 	 * the message.
 	 * 
-	 * @param timestamp
-	 *            A {@link java.util.Calendar} with the timestamp when this message was send.
+	 * @param timestamp A {@link java.util.Calendar} with the timestamp when this message was send.
 	 */
 	public void setSendTimestamp(Calendar timestamp) {
 		timeSend = timestamp;
@@ -118,11 +114,9 @@ public class ShortMessage implements XmlAble, Serializable {
 	/**
 	 * Creates a {@link ShortMessage} object from the given xml String.
 	 * 
-	 * @param xml
-	 *            String that should be parsed
+	 * @param xml String that should be parsed
 	 * @return Returns a {@link ShortMessage} object or null if an error occurs.
-	 * @throws MalformedXMLException
-	 *             if the xml String is not an {@link ShortMessage} object.
+	 * @throws MalformedXMLException if the xml String is not an {@link ShortMessage} object.
 	 */
 	public static ShortMessage createFromXml(String xml) throws MalformedXMLException {
 		String attrSend = null;
