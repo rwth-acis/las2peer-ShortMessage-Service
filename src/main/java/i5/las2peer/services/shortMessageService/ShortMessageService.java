@@ -2,17 +2,18 @@ package i5.las2peer.services.shortMessageService;
 
 import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;
+import java.util.logging.Level;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 
 import i5.las2peer.api.Service;
+import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.p2p.AgentNotKnownException;
 import i5.las2peer.persistency.Envelope;
 import i5.las2peer.restMapper.RESTMapper;
 import i5.las2peer.security.Agent;
-import i5.las2peer.security.Context;
 import i5.las2peer.security.GroupAgent;
 import i5.las2peer.security.ServiceAgent;
 import i5.las2peer.security.UserAgent;
@@ -35,6 +36,8 @@ import i5.las2peer.security.UserAgent;
  * 
  */
 public class ShortMessageService extends Service {
+
+	private final L2pLogger logger = L2pLogger.getInstance(ShortMessageService.class.getName());
 
 	/**
 	 * service properties with default values, can be overwritten with properties file
@@ -77,7 +80,7 @@ public class ShortMessageService extends Service {
 			try {
 				env = getContext().getStoredObject(ShortMessageBox.class, STORAGE_BASENAME + receivingAgentId);
 			} catch (Exception e) {
-				Context.logMessage(this, "Network storage not found. Creating new one. " + e);
+				logger.info("Network storage not found. Creating new one. " + e.toString());
 				env = Envelope.createClassIdEnvelope(new ShortMessageBox(1), STORAGE_BASENAME + receivingAgentId,
 						getAgent());
 			}
@@ -92,10 +95,10 @@ public class ShortMessageService extends Service {
 			env.addSignature(getAgent());
 			env.store();
 			env.close();
-			Context.logMessage(this, "stored " + stored.size() + " messages in network storage");
+			logger.info("stored " + stored.size() + " messages in network storage");
 			return "Message send successfully";
 		} catch (Exception e) {
-			Context.logError(this, "Can't persist short messages to network storage! " + e);
+			logger.log(Level.SEVERE, "Can't persist short messages to network storage! ", e);
 		}
 		return "Failure sending message";
 	}
@@ -139,12 +142,12 @@ public class ShortMessageService extends Service {
 			Envelope env = getContext().getStoredObject(ShortMessageBox.class, STORAGE_BASENAME + owner.getId());
 			env.open(getAgent());
 			ShortMessageBox stored = env.getContent(ShortMessageBox.class);
-			Context.logMessage(this, "Loaded " + stored.size() + " messages from network storage");
+			logger.info("Loaded " + stored.size() + " messages from network storage");
 			ShortMessage[] result = stored.getMessages();
 			env.close();
 			return result;
 		} catch (Exception e) {
-			Context.logError(this, "Can't read messages from network storage! " + e);
+			logger.log(Level.SEVERE, "Can't read messages from network storage! ", e);
 		}
 		return new ShortMessage[0];
 	}
@@ -189,7 +192,7 @@ public class ShortMessageService extends Service {
 			env.store();
 			env.close();
 		} catch (Exception e) {
-			Context.logError(this, "Can't clear messages from network storage! " + e);
+			logger.log(Level.SEVERE, "Can't clear messages from network storage! ", e);
 		}
 	}
 
@@ -214,7 +217,7 @@ public class ShortMessageService extends Service {
 				}
 			}
 		} catch (Exception e) {
-			Context.logMessage(this, "Could not resolve agent id " + agentId);
+			logger.log(Level.SEVERE, "Could not resolve agent id " + agentId, e);
 		}
 		return result;
 	}
@@ -229,7 +232,7 @@ public class ShortMessageService extends Service {
 		try {
 			result = RESTMapper.getMethodsAsXML(this.getClass());
 		} catch (Exception e) {
-			Context.logError(this, "Couldn't get REST mapping for this class " + e);
+			logger.log(Level.SEVERE, "Couldn't get REST mapping for this class ", e);
 		}
 		return result;
 	}

@@ -6,10 +6,11 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.logging.Level;
 
+import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.persistency.MalformedXMLException;
 import i5.las2peer.persistency.XmlAble;
-import i5.las2peer.security.Context;
 import i5.simpleXML.Element;
 import i5.simpleXML.Parser;
 import i5.simpleXML.XMLSyntaxException;
@@ -21,6 +22,8 @@ import rice.p2p.util.Base64;
  * 
  */
 public class ShortMessage implements XmlAble, Serializable {
+
+	private static final L2pLogger logger = L2pLogger.getInstance(ShortMessageService.class.getName());
 
 	private static final long serialVersionUID = 1L;
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy;MM;dd;HH;mm;ss;Z");
@@ -139,11 +142,11 @@ public class ShortMessage implements XmlAble, Serializable {
 			msg.setSendTimestamp(cal);
 			return msg;
 		} catch (XMLSyntaxException e) {
-			Context.logError(ShortMessage.class, "XML syntax error in '" + xml + "' " + e);
+			logger.log(Level.SEVERE, "XML syntax error in '" + xml + "'!", e);
 		} catch (NumberFormatException e) {
-			Context.logError(ShortMessage.class, "Can't parse timestamp '" + attrSend + "' " + e);
+			logger.log(Level.SEVERE, "Can't parse timestamp '" + attrSend + "'!", e);
 		} catch (ParseException e) {
-			Context.logError(ShortMessage.class, "Parsing failed! " + e);
+			logger.log(Level.SEVERE, "Parsing failed!", e);
 		}
 		return null;
 	}

@@ -2,9 +2,10 @@ package i5.las2peer.services.shortMessageService;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.logging.Level;
 
+import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.persistency.MalformedXMLException;
-import i5.las2peer.security.Context;
 
 /**
  * This class represents the message inbox for an user agent. Each time a message is send to an agent the message is
@@ -13,6 +14,8 @@ import i5.las2peer.security.Context;
  * 
  */
 public class ShortMessageBox implements Serializable {
+
+	private final L2pLogger logger = L2pLogger.getInstance(ShortMessageService.class.getName());
 
 	private static final long serialVersionUID = -300617519857096303L;
 	private final ArrayList<String> messages;
@@ -47,7 +50,7 @@ public class ShortMessageBox implements Serializable {
 				ShortMessage msg = ShortMessage.createFromXml(xml);
 				result.add(msg);
 			} catch (MalformedXMLException e) {
-				Context.logError(this, "Can't parse Message from xml '" + xml + "' " + e);
+				logger.log(Level.SEVERE, "Can't parse Message from xml '" + xml + "'!", e);
 			}
 		}
 		ShortMessage[] array = result.toArray(new ShortMessage[0]);
