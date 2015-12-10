@@ -27,8 +27,8 @@ import i5.las2peer.security.UserAgent;
  * <h3>Usage Hints</h3>
  * 
  * If you are new to LAS2peer and only want to start an instance (or ring) hosting this service, you can make use of the
- * start-script from the bin/ directory that comes with this project.<br/>
- * 
+ * start-script from the bin/ directory that comes with this project.
+ * <p>
  * Since there currently exists no user manager application, you will have to add each user as an XML-file to the
  * "config/startup" directory. This directory will be uploaded when you execute the start scripts. To produce agent
  * XML-files, you will have to make use of the LAS2peer ServiceAgentGenerator. At GitHub, there exists a script to use
