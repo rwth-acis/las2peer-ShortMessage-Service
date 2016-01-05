@@ -15,7 +15,7 @@ import i5.las2peer.persistency.MalformedXMLException;
  */
 public class ShortMessageBox implements Serializable {
 
-	private final L2pLogger logger = L2pLogger.getInstance(ShortMessageService.class.getName());
+	private static final L2pLogger logger = L2pLogger.getInstance(ShortMessageService.class.getName());
 
 	private static final long serialVersionUID = -300617519857096303L;
 	private final ArrayList<String> messages;

@@ -37,7 +37,7 @@ import i5.las2peer.security.UserAgent;
  */
 public class ShortMessageService extends Service {
 
-	private final L2pLogger logger = L2pLogger.getInstance(ShortMessageService.class.getName());
+	private static final L2pLogger logger = L2pLogger.getInstance(ShortMessageService.class.getName());
 
 	/**
 	 * service properties with default values, can be overwritten with properties file
@@ -71,7 +71,7 @@ public class ShortMessageService extends Service {
 			return "Message too long! (Maximum: " + maxMessageLength + ")";
 		}
 		// create short message
-		UserAgent sendingAgent = (UserAgent) getActiveAgent();
+		UserAgent sendingAgent = (UserAgent) getContext().getMainAgent();
 		ShortMessage msg = new ShortMessage(sendingAgent.getId(), receivingAgentId, message);
 		msg.setSendTimestamp(new GregorianCalendar());
 		// persist message to recipient storage
@@ -118,10 +118,10 @@ public class ShortMessageService extends Service {
 		}
 		long receiverId;
 		try {
-			receiverId = getActiveNode().getAgentIdForEmail(recipient);
+			receiverId = getContext().getLocalNode().getAgentIdForEmail(recipient);
 		} catch (AgentNotKnownException e) {
 			try {
-				receiverId = getActiveNode().getAgentIdForLogin(recipient);
+				receiverId = getContext().getLocalNode().getAgentIdForLogin(recipient);
 			} catch (AgentNotKnownException e2) {
 				return "There exists no agent for '" + recipient + "'! Email: " + e.getMessage() + " Login: "
 						+ e2.getMessage();
@@ -138,7 +138,7 @@ public class ShortMessageService extends Service {
 	public ShortMessage[] getShortMessages() {
 		try {
 			// load messages from network
-			Agent owner = getActiveAgent();
+			Agent owner = getContext().getMainAgent();
 			Envelope env = getContext().getStoredObject(ShortMessageBox.class, STORAGE_BASENAME + owner.getId());
 			env.open(getAgent());
 			ShortMessageBox stored = env.getContent(ShortMessageBox.class);
@@ -182,7 +182,7 @@ public class ShortMessageService extends Service {
 	@Path("deleteShortMessages")
 	public void deleteShortMessages() {
 		try {
-			Agent owner = getActiveAgent();
+			Agent owner = getContext().getMainAgent();
 			Envelope env = getContext().getStoredObject(ShortMessageBox.class, STORAGE_BASENAME + owner.getId());
 			env.open(getAgent());
 			ShortMessageBox stored = env.getContent(ShortMessageBox.class);
@@ -206,7 +206,7 @@ public class ShortMessageService extends Service {
 	protected String getAgentName(long agentId) {
 		String result = Long.toString(agentId);
 		try {
-			Agent agent = this.getActiveNode().getAgent(agentId);
+			Agent agent = getContext().getLocalNode().getAgent(agentId);
 			if (agent != null) {
 				if (agent instanceof UserAgent) {
 					result = ((UserAgent) agent).getLoginName();
