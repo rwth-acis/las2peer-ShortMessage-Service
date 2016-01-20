@@ -18,11 +18,11 @@
     <title>Short-Messages</title>
     <link rel="stylesheet" href="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/CSS/style.css" />	
     <script src="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/JS/ServiceAPI/moduleHelper.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/JS/jquery-2.2.0.min.js"></script>
     <script src="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/JS/ServiceAPI/b64.js"></script>
     <script src="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/JS/ServiceAPI/serviceAPI.js"></script>
     <script src="http://open-app.googlecode.com/files/openapp.js"></script>
-    <script src="http://dbis.rwth-aachen.de/gadgets/iwc/lib/iwc.js"></script>    
+    <script src="http://www.dbis.rwth-aachen.de/gadgets/iwc/lib/iwc.js"></script>
     <script src="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/JS/ServiceAPI/widgetAPI.js"></script>
     <script src="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/JS/config.js"></script>
     <script src="http://www.dbis.rwth-aachen.de/las2peer/sms-widget/JS/common.js"></script>
