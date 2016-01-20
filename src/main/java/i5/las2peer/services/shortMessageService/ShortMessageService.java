@@ -11,6 +11,7 @@ import javax.ws.rs.PathParam;
 import i5.las2peer.api.Service;
 import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.p2p.AgentNotKnownException;
+import i5.las2peer.p2p.ArtifactNotFoundException;
 import i5.las2peer.persistency.Envelope;
 import i5.las2peer.restMapper.RESTMapper;
 import i5.las2peer.security.Agent;
@@ -147,6 +148,8 @@ public class ShortMessageService extends Service {
 			ShortMessage[] result = stored.getMessages();
 			env.close();
 			return result;
+		} catch (ArtifactNotFoundException e) {
+			logger.log(Level.INFO, "No messages found in network!");
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Can't read messages from network storage! ", e);
 		}
