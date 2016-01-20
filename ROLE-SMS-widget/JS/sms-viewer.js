@@ -1,10 +1,9 @@
 (function() {
-  var api, fetchEntries, initEvents, iwcCallback, iwcManager, login, smsLib, requestSender, sendMessage;
+  var api, fetchEntries, initEvents, iwcCallback, iwcManager, login, smsLib, requestSender, sendMessage, autorefresh;
 
   api = i5.las2peer.jsAPI;
 
   smsLib = i5.las2peer.sms;
-
 
   /*
     Check explicitly if gadget is known, i.e. script is executed in widget environment.
@@ -37,11 +36,17 @@
   };
 
   initEvents = function() {
-    window.setInterval(function() {
-      fetchEntries();
-    }, 250);
     $("#refreshMessages").click(function() {
-      fetchEntries();
+      if (typeof autorefresh == "undefined" || autorefresh == null) {
+        // enable auto message refresh
+        autorefresh = window.setInterval(function() { fetchEntries(); }, 250);
+        $("#refreshMessages").css({"color":"#0f0"});
+      } else {
+        // disable auto message refresh
+        window.clearInterval(autorefresh);
+        autorefresh = null;
+        $("#refreshMessages").css({"color":"#f00"});
+      }
     });
     $("#text").focus(function() {
       $("#hint").html("");

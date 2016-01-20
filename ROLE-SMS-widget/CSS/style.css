@@ -96,18 +96,11 @@ body {
 }
 
 .refreshMessages {
+    color: #f00;
     font-size:45px;
     float:right;
     margin-right: 12px;
     height:50px;
-}
-
-.refreshMessages:hover {
-    color:#ccc;
-}
-
-.refreshMessages:active {
-    color:#afa;
 }
 
 #content input[type=text], textarea {
