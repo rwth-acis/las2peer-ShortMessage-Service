@@ -84,7 +84,7 @@
 	</target>
 
 	<target name="jar" depends="clean, compile-main" description="build the jar file used to deploy this service">
-		<property name="ShortMessageService.version" value="0.1" />
+		<property name="ShortMessageService.version" value="1.0" />
 		<jar jarfile="${export.jars}/i5.las2peer.services.shortMessageService-${ShortMessageService.version}.jar">
 			<fileset dir="${tmp.classes}" includes="i5/las2peer/services/shortMessageService/**" />
 			<manifest>
