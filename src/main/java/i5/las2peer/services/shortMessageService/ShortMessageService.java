@@ -35,6 +35,7 @@ import i5.las2peer.security.UserAgent;
  * this tool in the LAS2peer-Template-Project of the RWTH-ACIS group.
  * 
  */
+@Path("/sms-service")
 public class ShortMessageService extends Service {
 
 	private static final L2pLogger logger = L2pLogger.getInstance(ShortMessageService.class.getName());
@@ -111,7 +112,7 @@ public class ShortMessageService extends Service {
 	 * @return success or error message
 	 */
 	@GET
-	@Path("sendShortMessage/{recipient}/{message}")
+	@Path("/sendShortMessage/{recipient}/{message}")
 	public String sendShortMessage(@PathParam("recipient") String recipient, @PathParam("message") String message) {
 		if (recipient == null || recipient.isEmpty()) {
 			return "No recipient specified!";
@@ -159,7 +160,7 @@ public class ShortMessageService extends Service {
 	 * @return A String with messages or "No messages"
 	 */
 	@GET
-	@Path("getShortMessagesAsString")
+	@Path("/getShortMessagesAsString")
 	public String getShortMessagesAsString() {
 		ShortMessage[] messages = getShortMessages();
 		if (messages == null || messages.length == 0) {
@@ -179,7 +180,7 @@ public class ShortMessageService extends Service {
 	 * Clears all messages for the active agent inside the storage. This can't be undone!
 	 */
 	@GET
-	@Path("deleteShortMessages")
+	@Path("/deleteShortMessages")
 	public void deleteShortMessages() {
 		try {
 			Agent owner = getContext().getMainAgent();
