@@ -88,7 +88,7 @@ public class ShortMessageService extends Service {
 			}
 			env.open(getAgent());
 			// get messages from storage
-			ShortMessageBox stored = env.getContent(ShortMessageBox.class);
+			ShortMessageBox stored = env.getContent(this.getClass().getClassLoader(), ShortMessageBox.class);
 			// add new message
 			stored.addMessage(msg);
 			// FIXME is this necessary? Maybe just make this envelope not updateable
@@ -143,7 +143,7 @@ public class ShortMessageService extends Service {
 			Agent owner = getContext().getMainAgent();
 			Envelope env = getContext().getStoredObject(ShortMessageBox.class, STORAGE_BASENAME + owner.getId());
 			env.open(getAgent());
-			ShortMessageBox stored = env.getContent(ShortMessageBox.class);
+			ShortMessageBox stored = env.getContent(this.getClass().getClassLoader(), ShortMessageBox.class);
 			logger.info("Loaded " + stored.size() + " messages from network storage");
 			ShortMessage[] result = stored.getMessages();
 			env.close();
@@ -189,7 +189,7 @@ public class ShortMessageService extends Service {
 			Agent owner = getContext().getMainAgent();
 			Envelope env = getContext().getStoredObject(ShortMessageBox.class, STORAGE_BASENAME + owner.getId());
 			env.open(getAgent());
-			ShortMessageBox stored = env.getContent(ShortMessageBox.class);
+			ShortMessageBox stored = env.getContent(this.getClass().getClassLoader(), ShortMessageBox.class);
 			stored.clear();
 			env.updateContent(stored);
 			env.addSignature(getAgent());
