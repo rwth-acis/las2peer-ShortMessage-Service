@@ -215,7 +215,7 @@ public class ShortMessageService extends Service {
 				if (agent instanceof UserAgent) {
 					result = ((UserAgent) agent).getLoginName();
 				} else if (agent instanceof ServiceAgent) {
-					result = ((ServiceAgent) agent).getServiceClassName();
+					result = ((ServiceAgent) agent).getServiceNameVersion().getName();
 				} else if (agent instanceof GroupAgent) {
 					result = ((GroupAgent) agent).getName();
 				}
