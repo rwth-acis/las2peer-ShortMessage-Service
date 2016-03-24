@@ -7,5 +7,8 @@
 	<classpathentry kind="lib" path="lib/las2peer-0.5-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="lib/las2peer-rest-mapper-0.5-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="lib/las2peer-web-connector-0.5-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="lib/FreePastry-2.1.jar"/>
+	<classpathentry kind="lib" path="lib/i5-simpleXML-0.2.jar"/>
+	<classpathentry kind="lib" path="lib/jsr311-api-1.1.1.jar"/>
 	<classpathentry kind="output" path="output"/>
 </classpath>
