@@ -72,6 +72,12 @@
         console = document.getElementById("content");
         console.scrollTop = console.scrollHeight;
     }, function(error) {
+        // disable auto message refresh
+        if (typeof autorefresh != "undefined" && autorefresh != null) {
+          window.clearInterval(autorefresh);
+          autorefresh = null;
+          $("#refreshMessages").css({"color":"#f00"});
+        }
         $("#content").val(error);
         alert(error);
     });
@@ -80,7 +86,7 @@
   sendMessage = function() {
     agent = document.getElementById("agent");
     text = document.getElementById("text");
-    requestSender.sendRequest("get", "sendShortMessage/"+agent.value+"/"+text.value, "", function(data) {
+    requestSender.sendRequest("get", "sendShortMessage/"+agent.value+"/"+encodeURIComponent(text.value), "", function(data) {
         $("#hint").html(data);
     }, function(error) {
         $("#hint").html(error);
