@@ -123,7 +123,7 @@
 	<delete dir="${tmp.junit}" />
 </target>
 
-<target name="junit" depends="junit-clean, init-junit, compile-junit" description="runs all junit tests for this project">
+<target name="junit" depends="init-junit, compile-junit" description="runs all junit tests for this project">
 	<junit fork="yes" haltonerror="yes" haltonfailure="yes" printsummary="yes">
 		<classpath>
 			<pathelement path="${tmp.classes}" />
