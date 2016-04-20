@@ -20,20 +20,20 @@ import i5.las2peer.security.ServiceAgent;
 import i5.las2peer.security.UserAgent;
 
 /**
- * This is a middleware service for LAS2peer that provides methods to send short messages via a LAS2peer network. It is
- * stateless, so there exist no session dependent values and it uses the LAS2peer shared storage for persistence. This
- * makes it possible to run and use the service either at each node that joins a LAS2peer network or to just call the
- * service from a LAS2peer instance that joined a network that contains at least one node hosting this service.<br>
+ * This is a middleware service for las2peer that provides methods to send short messages via a las2peer network. It is
+ * stateless, so there exist no session dependent values and it uses the las2peer shared storage for persistence. This
+ * makes it possible to run and use the service either at each node that joins a las2peer network or to just call the
+ * service from a las2peer instance that joined a network that contains at least one node hosting this service.<br>
  * 
  * <h3>Usage Hints</h3>
  * 
- * If you are new to LAS2peer and only want to start an instance (or ring) hosting this service, you can make use of the
+ * If you are new to las2peer and only want to start an instance (or ring) hosting this service, you can make use of the
  * start-script from the bin/ directory that comes with this project.
  * <p>
  * Since there currently exists no user manager application, you will have to add each user as an XML-file to the
  * "config/startup" directory. This directory will be uploaded when you execute the start scripts. To produce agent
- * XML-files, you will have to make use of the LAS2peer ServiceAgentGenerator. At GitHub, there exists a script to use
- * this tool in the LAS2peer-Template-Project of the RWTH-ACIS group.
+ * XML-files, you will have to make use of the las2peer ServiceAgentGenerator. At GitHub, there exists a script to use
+ * this tool in the las2peer-Template-Project of the RWTH-ACIS group.
  * 
  */
 @Path("/sms-service")
