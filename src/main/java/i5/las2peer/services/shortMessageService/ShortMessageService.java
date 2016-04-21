@@ -87,6 +87,7 @@ public class ShortMessageService extends Service {
 						getAgent());
 			}
 			env.open(getAgent());
+			env.setOverWriteBlindly(true);
 			// get messages from storage
 			ShortMessageBox stored = env.getContent(this.getClass().getClassLoader(), ShortMessageBox.class);
 			// add new message
