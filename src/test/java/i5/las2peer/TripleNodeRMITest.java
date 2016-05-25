@@ -111,7 +111,7 @@ public class TripleNodeRMITest {
 		assertEquals(messages2.length, 2);
 
 		// UserA logout
-		nodes.get(1).unregisterAgent(userA);
+		nodes.get(1).unregisterReceiver(userA);
 
 		// verify UserB still got two messages
 		ShortMessage[] messages3 = (ShortMessage[]) mediatorB.invoke(ShortMessageService.class.getName(),
@@ -119,7 +119,7 @@ public class TripleNodeRMITest {
 		assertEquals(messages3.length, 2);
 
 		// UserB logout
-		nodes.get(2).unregisterAgent(userB);
+		nodes.get(2).unregisterReceiver(userB);
 
 		stopNetwork();
 	}
