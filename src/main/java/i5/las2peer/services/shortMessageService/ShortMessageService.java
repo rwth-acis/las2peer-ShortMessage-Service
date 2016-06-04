@@ -10,6 +10,7 @@ import javax.ws.rs.PathParam;
 
 import i5.las2peer.api.Service;
 import i5.las2peer.logging.L2pLogger;
+import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.p2p.AgentNotKnownException;
 import i5.las2peer.p2p.ArtifactNotFoundException;
 import i5.las2peer.persistency.Envelope;
@@ -67,10 +68,14 @@ public class ShortMessageService extends Service {
 	public String sendShortMessage(long receivingAgentId, String message) {
 		// validate message
 		if (message == null || message.isEmpty()) {
-			return "Message can not be empty!";
+			String logMsg = "Message can not be empty!";
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_1, getContext().getMainAgent(), logMsg);
+			return logMsg;
 		}
 		if (message.length() > maxMessageLength) {
-			return "Message too long! (Maximum: " + maxMessageLength + ")";
+			String logMsg = "Message too long! (Maximum: " + maxMessageLength + ")";
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_2, getContext().getMainAgent(), logMsg);
+			return logMsg;
 		}
 		// create short message
 		UserAgent sendingAgent = (UserAgent) getContext().getMainAgent();
@@ -82,7 +87,9 @@ public class ShortMessageService extends Service {
 			try {
 				env = getContext().getStoredObject(ShortMessageBox.class, STORAGE_BASENAME + receivingAgentId);
 			} catch (Exception e) {
-				logger.info("Network storage not found. Creating new one. " + e.toString());
+				String logMsg = "Network storage not found. Creating new one. " + e.toString();
+				logger.info(logMsg);
+				L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_3, getContext().getMainAgent(), logMsg);
 				env = Envelope.createClassIdEnvelope(new ShortMessageBox(1), STORAGE_BASENAME + receivingAgentId,
 						getAgent());
 			}
@@ -98,10 +105,14 @@ public class ShortMessageService extends Service {
 			env.addSignature(getAgent());
 			env.store();
 			env.close();
-			logger.info("stored " + stored.size() + " messages in network storage");
+			String logMsg = "stored " + stored.size() + " messages in network storage";
+			logger.info(logMsg);
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_1, getContext().getMainAgent(), logMsg);
 			return "Message send successfully";
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Can't persist short messages to network storage! ", e);
+			String logMsg = "Can't persist short messages to network storage!";
+			logger.log(Level.SEVERE, logMsg, e);
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_4, getContext().getMainAgent(), logMsg);
 		}
 		return "Failure sending message";
 	}
@@ -117,7 +128,9 @@ public class ShortMessageService extends Service {
 	@Path("/sendShortMessage/{recipient}/{message}")
 	public String sendShortMessage(@PathParam("recipient") String recipient, @PathParam("message") String message) {
 		if (recipient == null || recipient.isEmpty()) {
-			return "No recipient specified!";
+			String logMsg = "No recipient specified!";
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_2, getContext().getMainAgent(), logMsg);
+			return logMsg;
 		}
 		long receiverId;
 		try {
@@ -126,10 +139,13 @@ public class ShortMessageService extends Service {
 			try {
 				receiverId = getContext().getLocalNode().getAgentIdForLogin(recipient);
 			} catch (AgentNotKnownException e2) {
-				return "There exists no agent for '" + recipient + "'! Email: " + e.getMessage() + " Login: "
+				String logMsg = "There exists no agent for '" + recipient + "'! Email: " + e.getMessage() + " Login: "
 						+ e2.getMessage();
+				L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_5, getContext().getMainAgent(), logMsg);
+				return logMsg;
 			}
 		}
+		L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_9, getContext().getMainAgent(), "message send requested");
 		return sendShortMessage(receiverId, message);
 	}
 
@@ -145,14 +161,20 @@ public class ShortMessageService extends Service {
 			Envelope env = getContext().getStoredObject(ShortMessageBox.class, STORAGE_BASENAME + owner.getId());
 			env.open(getAgent());
 			ShortMessageBox stored = env.getContent(this.getClass().getClassLoader(), ShortMessageBox.class);
-			logger.info("Loaded " + stored.size() + " messages from network storage");
+			String logMsg = "Loaded " + stored.size() + " messages from network storage";
+			logger.info(logMsg);
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_3, getContext().getMainAgent(), logMsg);
 			ShortMessage[] result = stored.getMessages();
 			env.close();
 			return result;
 		} catch (ArtifactNotFoundException e) {
-			logger.log(Level.INFO, "No messages found in network!");
+			String logMsg = "No messages found in network!";
+			logger.log(Level.INFO, logMsg);
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_4, getContext().getMainAgent(), logMsg);
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Can't read messages from network storage! ", e);
+			String logMsg = "Can't read messages from network storage!";
+			logger.log(Level.SEVERE, logMsg, e);
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_6, getContext().getMainAgent(), logMsg);
 		}
 		return new ShortMessage[0];
 	}
@@ -168,7 +190,9 @@ public class ShortMessageService extends Service {
 	public String getShortMessagesAsString() {
 		ShortMessage[] messages = getShortMessages();
 		if (messages == null || messages.length == 0) {
-			return "No messages";
+			String logMsg = "No messages";
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_5, getContext().getMainAgent(), logMsg);
+			return logMsg;
 		} else {
 			SimpleDateFormat sdf = new SimpleDateFormat();
 			StringBuilder sb = new StringBuilder();
@@ -176,6 +200,7 @@ public class ShortMessageService extends Service {
 				sb.append(sdf.format(sms.getSendTimestamp().getTime()) + " from " + getAgentName(sms.getSenderId())
 						+ " to " + getAgentName(sms.getRecipientId()) + ": " + new String(sms.getContent()) + "\n");
 			}
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_6, getContext().getMainAgent(), "messages fetched");
 			return sb.toString();
 		}
 	}
@@ -196,8 +221,11 @@ public class ShortMessageService extends Service {
 			env.addSignature(getAgent());
 			env.store();
 			env.close();
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_7, getContext().getMainAgent(), "message deleted");
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Can't clear messages from network storage! ", e);
+			String logMsg = "Can't clear messages from network storage!";
+			logger.log(Level.SEVERE, logMsg, e);
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_6, getContext().getMainAgent(), logMsg);
 		}
 	}
 
@@ -221,8 +249,11 @@ public class ShortMessageService extends Service {
 					result = ((GroupAgent) agent).getName();
 				}
 			}
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_9, getContext().getMainAgent(), "agent name resolved");
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Could not resolve agent id " + agentId, e);
+			String logMsg = "Could not resolve agent id " + agentId;
+			logger.log(Level.SEVERE, logMsg, e);
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_7, getContext().getMainAgent(), logMsg);
 		}
 		return result;
 	}
@@ -236,8 +267,11 @@ public class ShortMessageService extends Service {
 		String result = "";
 		try {
 			result = RESTMapper.getMethodsAsXML(this.getClass());
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_8, getContext().getMainAgent(), "REST mapping created");
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Couldn't get REST mapping for this class ", e);
+			String logMsg = "Couldn't get REST mapping for this class";
+			logger.log(Level.SEVERE, logMsg, e);
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_8, getContext().getMainAgent(), logMsg);
 		}
 		return result;
 	}
