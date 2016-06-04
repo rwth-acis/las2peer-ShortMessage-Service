@@ -230,7 +230,7 @@ public class ShortMessageService extends Service {
 	/**
 	 * Used by the RESTMapper
 	 * 
-	 * @return
+	 * @return Returns the REST mapping for this service
 	 */
 	public String getRESTMapping() {
 		String result = "";

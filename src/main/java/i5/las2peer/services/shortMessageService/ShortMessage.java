@@ -42,7 +42,7 @@ public class ShortMessage implements XmlAble, Serializable {
 	 * send. Since the message is base64 encoded even an image could be used as message.
 	 * 
 	 * @param agentIdFrom user agent id who send the message
-	 * @param agentIdto user agent id who should receive the message
+	 * @param agentIdTo user agent id who should receive the message
 	 * @param message the message itself as byte array
 	 */
 	public ShortMessage(long agentIdFrom, long agentIdTo, byte[] message) {
