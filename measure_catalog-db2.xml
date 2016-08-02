@@ -1,0 +1,40 @@
+<Catalog>
+
+	<measure name="send to login">
+		<query name="countOfLogin">
+			SELECT COUNT(*) AS countOfLogin FROM
+			LAS2PEERMON.MESSAGE
+			WHERE EVENT = 'SERVICE_CUSTOM_MESSAGE_9'
+			AND
+			SOURCE_AGENT = '$SERVICE$'
+		</query>
+		<visualization type="Value" />
+	</measure>
+
+	<measure name="send to id">
+		<query name="countOfId">
+			SELECT COUNT(*) AS countOfId FROM
+			LAS2PEERMON.MESSAGE
+			WHERE EVENT = 'SERVICE_CUSTOM_MESSAGE_1'
+			AND
+			SOURCE_AGENT = '$SERVICE$'
+		</query>
+		<visualization type="Value" />
+	</measure>
+
+	<measure name="Messages per Agent">
+		<query name="countOfMessage1">
+			SELECT AVG(messages) FROM (SELECT COUNT(*) AS
+			messages FROM
+			LAS2PEERMON.MESSAGE
+			WHERE EVENT =
+			'SERVICE_CUSTOM_MESSAGE_1'
+			AND SOURCE_AGENT = '$SERVICE$'
+			GROUP
+			BY
+			DESTINATION_AGENT)
+		</query>
+		<visualization type="Value" />
+	</measure>
+
+</Catalog>
