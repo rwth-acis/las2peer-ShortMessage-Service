@@ -5,7 +5,6 @@ import static org.junit.Assert.assertEquals;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import i5.las2peer.p2p.PastryNodeImpl;
@@ -16,7 +15,6 @@ import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.shortMessageService.ShortMessage;
 import i5.las2peer.services.shortMessageService.ShortMessageService;
 import i5.las2peer.testing.TestSuite;
-import i5.las2peer.tools.ColoredOutput;
 
 /**
  * This testcase checks if the service can be used inside a very small network consisting of 3 nodes. The service is
@@ -28,11 +26,6 @@ import i5.las2peer.tools.ColoredOutput;
  *
  */
 public class TripleNodeRMITest {
-
-	@Before
-	public void init() {
-		ColoredOutput.allOff();
-	}
 
 	@Test
 	public void sendMessageAcrossNodes() throws Exception {
@@ -82,17 +75,6 @@ public class TripleNodeRMITest {
 		ShortMessage[] messages2 = (ShortMessage[]) mediatorB.invoke(ShortMessageService.class.getName(),
 				"getShortMessages", new Serializable[] {}, false);
 		assertEquals(2, messages2.length);
-
-		// UserA logout
-		nodes.get(1).unregisterReceiver(userA);
-
-		// verify UserB still got two messages
-		ShortMessage[] messages3 = (ShortMessage[]) mediatorB.invoke(ShortMessageService.class.getName(),
-				"getShortMessages", new Serializable[] {}, false);
-		assertEquals(2, messages3.length);
-
-		// UserB logout
-		nodes.get(2).unregisterReceiver(userB);
 
 		for (PastryNodeImpl node : nodes) {
 			node.shutDown();

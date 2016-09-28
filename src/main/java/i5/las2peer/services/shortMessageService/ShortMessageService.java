@@ -78,31 +78,30 @@ public class ShortMessageService extends Service {
 			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_2, getContext().getMainAgent(), logMsg);
 			return logMsg;
 		}
-		// fetch recipient agent
-
-		// create short message
 		UserAgent sendingAgent = (UserAgent) getContext().getMainAgent();
+		// create short message
 		ShortMessage msg = new ShortMessage(sendingAgent.getId(), receivingAgentId, message);
 		msg.setSendTimestamp(new GregorianCalendar());
 		// persist message to recipient storage
 		try {
 			Envelope env = null;
 			ShortMessageBox stored = null;
-			Agent receivingAgent = getContext().getAgent(receivingAgentId);
 			try {
 				env = getContext().fetchEnvelope(STORAGE_BASENAME + receivingAgentId);
 				// get messages from storage
-				stored = (ShortMessageBox) env.getContent();
-				env = getContext().createEnvelope(env, stored, receivingAgent);
-			} catch (Exception e) {
+				stored = (ShortMessageBox) env.getContent(getAgent());
+				// add new message
+				stored.addMessage(msg);
+				env = getContext().createEnvelope(env, stored, getAgent());
+			} catch (ArtifactNotFoundException e) {
 				String logMsg = "Network storage not found. Creating new one. " + e.toString();
 				logger.info(logMsg);
 				L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_3, getContext().getMainAgent(), logMsg);
 				stored = new ShortMessageBox(1);
-				env = getContext().createEnvelope(STORAGE_BASENAME + receivingAgentId, stored, receivingAgent);
+				// add new message
+				stored.addMessage(msg);
+				env = getContext().createEnvelope(STORAGE_BASENAME + receivingAgentId, stored, getAgent());
 			}
-			// add new message
-			stored.addMessage(msg);
 			getContext().storeEnvelope(env);
 			String logMsg = "stored " + stored.size() + " messages in network storage";
 			logger.info(logMsg);
@@ -158,7 +157,7 @@ public class ShortMessageService extends Service {
 			// load messages from network
 			Agent owner = getContext().getMainAgent();
 			Envelope env = getContext().fetchEnvelope(STORAGE_BASENAME + owner.getId());
-			ShortMessageBox stored = (ShortMessageBox) env.getContent();
+			ShortMessageBox stored = (ShortMessageBox) env.getContent(getAgent());
 			String logMsg = "Loaded " + stored.size() + " messages from network storage";
 			logger.info(logMsg);
 			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_3, getContext().getMainAgent(), logMsg);
