@@ -4,21 +4,19 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mpisws.p2p.transport.multiaddress.MultiInetSocketAddress;
 
 import i5.las2peer.p2p.PastryNodeImpl;
-import i5.las2peer.p2p.PastryNodeImpl.STORAGE_MODE;
+import i5.las2peer.p2p.ServiceNameVersion;
 import i5.las2peer.security.Mediator;
 import i5.las2peer.security.ServiceAgent;
 import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.shortMessageService.ShortMessage;
 import i5.las2peer.services.shortMessageService.ShortMessageService;
+import i5.las2peer.testing.TestSuite;
 import i5.las2peer.tools.ColoredOutput;
-import rice.pastry.socket.SocketPastryNodeFactory;
 
 /**
  * This testcase checks if the service can be used inside a very small network consisting of 3 nodes. The service is
@@ -31,96 +29,74 @@ import rice.pastry.socket.SocketPastryNodeFactory;
  */
 public class TripleNodeRMITest {
 
-	List<PastryNodeImpl> nodes;
-	PastryNodeImpl bootstrap;
-
 	@Before
 	public void init() {
 		ColoredOutput.allOff();
 	}
 
-	private void startNetwork(int numOfNodes) throws Exception {
-		nodes = new ArrayList<>(numOfNodes);
-		bootstrap = new PastryNodeImpl(30000, null, STORAGE_MODE.memory, false, null, null);
-		bootstrap.launch();
-		// get the address the boostrap node listens to
-		MultiInetSocketAddress addr = (MultiInetSocketAddress) bootstrap.getPastryNode().getVars()
-				.get(SocketPastryNodeFactory.PROXY_ADDRESS);
-		String strAddr = addr.getAddress(0).getHostString();
-		nodes.add(bootstrap);
-		for (int i = 1; i < numOfNodes; i++) {
-			PastryNodeImpl n = new PastryNodeImpl(30000 + i, strAddr + ":30000", STORAGE_MODE.memory, false, null,
-					null);
-			n.launch();
-			nodes.add(n);
-		}
-	}
-
-	private void stopNetwork() {
-		for (PastryNodeImpl node : nodes) {
-			node.shutDown();
-		}
-	}
-
 	@Test
 	public void sendMessageAcrossNodes() throws Exception {
 		System.out.println("starting network...");
-		startNetwork(3);
+		ArrayList<PastryNodeImpl> nodes = TestSuite.launchNetwork(3);
 
 		// create agents
 		System.out.println("creating user agents...");
-		ServiceAgent service = ServiceAgent.createServiceAgent(ShortMessageService.class.getName(),
-				"test-service-pass");
+		ServiceAgent service = ServiceAgent.createServiceAgent(
+				new ServiceNameVersion(ShortMessageService.class.getName(), "1.0"), "test-service-pass");
 		UserAgent userA = UserAgent.createUserAgent("test-pass-a");
+		userA.unlockPrivateKey("test-pass-a");
+		nodes.get(0).storeAgent(userA);
 		UserAgent userB = UserAgent.createUserAgent("test-pass-b");
+		userB.unlockPrivateKey("test-pass-b");
+		nodes.get(2).storeAgent(userB);
 
 		// start service instance on node 0
 		System.out.println("starting service on node 0");
 		service.unlockPrivateKey("test-service-pass");
+		nodes.get(0).storeAgent(service);
 		nodes.get(0).registerReceiver(service);
 
 		// UserA login at node 1
 		System.out.println("user a login at node 1");
-		userA.unlockPrivateKey("test-pass-a");
-		Mediator mediatorA = nodes.get(1).getOrRegisterLocalMediator(userA);
-		nodes.get(0).storeAgent(userA);
+		Mediator mediatorA = nodes.get(1).createMediatorForAgent(userA);
 
 		// UserA send first message to UserB
 		System.out.println("user a sending first message to user b");
 		mediatorA.invoke(ShortMessageService.class.getName(), "sendShortMessage",
-				new Serializable[] { userB.getId(), "First hello world to B from A" }, true);
+				new Serializable[] { userB.getId(), "First hello world to B from A" }, false);
 
 		// UserB login at node 2
 		System.out.println("user b login at node 2");
-		userB.unlockPrivateKey("test-pass-b");
-		Mediator mediatorB = nodes.get(2).getOrRegisterLocalMediator(userB);
-		nodes.get(2).storeAgent(userB);
+		Mediator mediatorB = nodes.get(2).createMediatorForAgent(userB);
 
 		// verify UserB received first message
 		ShortMessage[] messages1 = (ShortMessage[]) mediatorB.invoke(ShortMessageService.class.getName(),
-				"getShortMessages", new Serializable[] {}, true);
-		assertEquals(messages1.length, 1);
+				"getShortMessages", new Serializable[] {}, false);
+		assertEquals(1, messages1.length);
 
 		// UserA send second message to UserB
 		mediatorA.invoke(ShortMessageService.class.getName(), "sendShortMessage",
-				new Serializable[] { userB.getId(), "Second hello world to B from A" }, true);
+				new Serializable[] { userB.getId(), "Second hello world to B from A" }, false);
 
 		// verify UserB received two messages
 		ShortMessage[] messages2 = (ShortMessage[]) mediatorB.invoke(ShortMessageService.class.getName(),
-				"getShortMessages", new Serializable[] {}, true);
-		assertEquals(messages2.length, 2);
+				"getShortMessages", new Serializable[] {}, false);
+		assertEquals(2, messages2.length);
 
 		// UserA logout
 		nodes.get(1).unregisterReceiver(userA);
 
 		// verify UserB still got two messages
 		ShortMessage[] messages3 = (ShortMessage[]) mediatorB.invoke(ShortMessageService.class.getName(),
-				"getShortMessages", new Serializable[] {}, true);
-		assertEquals(messages3.length, 2);
+				"getShortMessages", new Serializable[] {}, false);
+		assertEquals(2, messages3.length);
 
 		// UserB logout
 		nodes.get(2).unregisterReceiver(userB);
 
-		stopNetwork();
+		for (PastryNodeImpl node : nodes) {
+			node.shutDown();
+		}
 	}
+
 }

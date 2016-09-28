@@ -9,14 +9,15 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 
 import i5.las2peer.api.Service;
+import i5.las2peer.api.exceptions.ArtifactNotFoundException;
 import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.p2p.AgentNotKnownException;
-import i5.las2peer.p2p.ArtifactNotFoundException;
 import i5.las2peer.persistency.Envelope;
 import i5.las2peer.restMapper.RESTMapper;
 import i5.las2peer.security.Agent;
 import i5.las2peer.security.GroupAgent;
+import i5.las2peer.security.L2pSecurityException;
 import i5.las2peer.security.ServiceAgent;
 import i5.las2peer.security.UserAgent;
 
@@ -77,6 +78,8 @@ public class ShortMessageService extends Service {
 			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_2, getContext().getMainAgent(), logMsg);
 			return logMsg;
 		}
+		// fetch recipient agent
+
 		// create short message
 		UserAgent sendingAgent = (UserAgent) getContext().getMainAgent();
 		ShortMessage msg = new ShortMessage(sendingAgent.getId(), receivingAgentId, message);
@@ -84,27 +87,23 @@ public class ShortMessageService extends Service {
 		// persist message to recipient storage
 		try {
 			Envelope env = null;
+			ShortMessageBox stored = null;
+			Agent receivingAgent = getContext().getAgent(receivingAgentId);
 			try {
-				env = getContext().getStoredObject(ShortMessageBox.class, STORAGE_BASENAME + receivingAgentId);
+				env = getContext().fetchEnvelope(STORAGE_BASENAME + receivingAgentId);
+				// get messages from storage
+				stored = (ShortMessageBox) env.getContent();
+				env = getContext().createEnvelope(env, stored, receivingAgent);
 			} catch (Exception e) {
 				String logMsg = "Network storage not found. Creating new one. " + e.toString();
 				logger.info(logMsg);
 				L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_3, getContext().getMainAgent(), logMsg);
-				env = Envelope.createClassIdEnvelope(new ShortMessageBox(1), STORAGE_BASENAME + receivingAgentId,
-						getAgent());
+				stored = new ShortMessageBox(1);
+				env = getContext().createEnvelope(STORAGE_BASENAME + receivingAgentId, stored, receivingAgent);
 			}
-			env.open(getAgent());
-			env.setOverWriteBlindly(true);
-			// get messages from storage
-			ShortMessageBox stored = env.getContent(this.getClass().getClassLoader(), ShortMessageBox.class);
 			// add new message
 			stored.addMessage(msg);
-			// FIXME is this necessary? Maybe just make this envelope not updateable
-			env.updateContent(stored);
-			// close envelope
-			env.addSignature(getAgent());
-			env.store();
-			env.close();
+			getContext().storeEnvelope(env);
 			String logMsg = "stored " + stored.size() + " messages in network storage";
 			logger.info(logMsg);
 			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_1, getContext().getMainAgent(), logMsg);
@@ -135,10 +134,10 @@ public class ShortMessageService extends Service {
 		long receiverId;
 		try {
 			receiverId = getContext().getLocalNode().getAgentIdForEmail(recipient);
-		} catch (AgentNotKnownException e) {
+		} catch (AgentNotKnownException | L2pSecurityException e) {
 			try {
 				receiverId = getContext().getLocalNode().getAgentIdForLogin(recipient);
-			} catch (AgentNotKnownException e2) {
+			} catch (AgentNotKnownException | L2pSecurityException e2) {
 				String logMsg = "There exists no agent for '" + recipient + "'! Email: " + e.getMessage() + " Login: "
 						+ e2.getMessage();
 				L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_5, getContext().getMainAgent(), logMsg);
@@ -158,14 +157,12 @@ public class ShortMessageService extends Service {
 		try {
 			// load messages from network
 			Agent owner = getContext().getMainAgent();
-			Envelope env = getContext().getStoredObject(ShortMessageBox.class, STORAGE_BASENAME + owner.getId());
-			env.open(getAgent());
-			ShortMessageBox stored = env.getContent(this.getClass().getClassLoader(), ShortMessageBox.class);
+			Envelope env = getContext().fetchEnvelope(STORAGE_BASENAME + owner.getId());
+			ShortMessageBox stored = (ShortMessageBox) env.getContent();
 			String logMsg = "Loaded " + stored.size() + " messages from network storage";
 			logger.info(logMsg);
 			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_3, getContext().getMainAgent(), logMsg);
 			ShortMessage[] result = stored.getMessages();
-			env.close();
 			return result;
 		} catch (ArtifactNotFoundException e) {
 			String logMsg = "No messages found in network!";
@@ -213,14 +210,11 @@ public class ShortMessageService extends Service {
 	public void deleteShortMessages() {
 		try {
 			Agent owner = getContext().getMainAgent();
-			Envelope env = getContext().getStoredObject(ShortMessageBox.class, STORAGE_BASENAME + owner.getId());
-			env.open(getAgent());
-			ShortMessageBox stored = env.getContent(this.getClass().getClassLoader(), ShortMessageBox.class);
+			Envelope env = getContext().fetchEnvelope(STORAGE_BASENAME + owner.getId());
+			ShortMessageBox stored = (ShortMessageBox) env.getContent();
 			stored.clear();
-			env.updateContent(stored);
-			env.addSignature(getAgent());
-			env.store();
-			env.close();
+			Envelope updated = getContext().createEnvelope(env, stored);
+			getContext().storeEnvelope(updated);
 			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_7, getContext().getMainAgent(), "message deleted");
 		} catch (Exception e) {
 			String logMsg = "Can't clear messages from network storage!";
