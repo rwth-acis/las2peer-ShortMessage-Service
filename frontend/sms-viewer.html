@@ -123,7 +123,7 @@
   <!-- instantiate and use the client library -->
   <script type="text/javascript">
     // create new instance of ShortMessageServiceClient, given its endpoint URL
-    var client = new ShortMessageServiceClient("http://las2peer.halifax.rwth-aachen.de:9180/sms-service");
+    var client = new ShortMessageServiceClient("http://localhost:14580/sms-service");
     // function defined as response to a click on the first button (see below)
     function fetchEntries() {
       client.getMethod(
