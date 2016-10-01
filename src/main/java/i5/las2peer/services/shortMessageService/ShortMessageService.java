@@ -8,13 +8,12 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 
-import i5.las2peer.api.Service;
 import i5.las2peer.api.exceptions.ArtifactNotFoundException;
 import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.p2p.AgentNotKnownException;
 import i5.las2peer.persistency.Envelope;
-import i5.las2peer.restMapper.RESTMapper;
+import i5.las2peer.restMapper.RESTService;
 import i5.las2peer.security.Agent;
 import i5.las2peer.security.GroupAgent;
 import i5.las2peer.security.L2pSecurityException;
@@ -39,7 +38,7 @@ import i5.las2peer.security.UserAgent;
  * 
  */
 @Path("/sms-service")
-public class ShortMessageService extends Service {
+public class ShortMessageService extends RESTService {
 
 	private static final L2pLogger logger = L2pLogger.getInstance(ShortMessageService.class.getName());
 
@@ -247,24 +246,6 @@ public class ShortMessageService extends Service {
 			String logMsg = "Could not resolve agent id " + agentId;
 			logger.log(Level.SEVERE, logMsg, e);
 			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_7, getContext().getMainAgent(), logMsg);
-		}
-		return result;
-	}
-
-	/**
-	 * Used by the RESTMapper
-	 * 
-	 * @return Returns the REST mapping for this service
-	 */
-	public String getRESTMapping() {
-		String result = "";
-		try {
-			result = RESTMapper.getMethodsAsXML(this.getClass());
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_8, getContext().getMainAgent(), "REST mapping created");
-		} catch (Exception e) {
-			String logMsg = "Couldn't get REST mapping for this class";
-			logger.log(Level.SEVERE, logMsg, e);
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_8, getContext().getMainAgent(), logMsg);
 		}
 		return result;
 	}
