@@ -43,7 +43,7 @@ public class ShortMessageService extends RESTService {
 	private static final L2pLogger logger = L2pLogger.getInstance(ShortMessageService.class.getName());
 
 	private static final long MAXIMUM_MESSAGE_LENGTH = 140;
-	private static final String STORAGE_BASENAME = "shortmessagestorage";
+	private static final String MESSAGEBOX_IDENTIFIER = "shortmessagebox-";
 
 	/**
 	 * Constructor: Loads the properties file and sets the values.
@@ -81,7 +81,7 @@ public class ShortMessageService extends RESTService {
 			Envelope env = null;
 			ShortMessageBox stored = null;
 			try {
-				env = getContext().fetchEnvelope(STORAGE_BASENAME + receivingAgentId);
+				env = getContext().fetchEnvelope(getMessageBoxIdentifier(receivingAgentId));
 				// get messages from storage
 				stored = (ShortMessageBox) env.getContent(getAgent());
 				// add new message
@@ -94,7 +94,7 @@ public class ShortMessageService extends RESTService {
 				stored = new ShortMessageBox(1);
 				// add new message
 				stored.addMessage(msg);
-				env = getContext().createEnvelope(STORAGE_BASENAME + receivingAgentId, stored, getAgent());
+				env = getContext().createEnvelope(getMessageBoxIdentifier(receivingAgentId), stored, getAgent());
 			}
 			getContext().storeEnvelope(env);
 			String logMsg = "stored " + stored.size() + " messages in network storage";
@@ -150,7 +150,7 @@ public class ShortMessageService extends RESTService {
 		try {
 			// load messages from network
 			Agent owner = getContext().getMainAgent();
-			Envelope env = getContext().fetchEnvelope(STORAGE_BASENAME + owner.getId());
+			Envelope env = getContext().fetchEnvelope(getMessageBoxIdentifier(owner.getId()));
 			ShortMessageBox stored = (ShortMessageBox) env.getContent(getAgent());
 			String logMsg = "Loaded " + stored.size() + " messages from network storage";
 			logger.info(logMsg);
@@ -203,7 +203,7 @@ public class ShortMessageService extends RESTService {
 	public void deleteShortMessages() {
 		try {
 			Agent owner = getContext().getMainAgent();
-			Envelope env = getContext().fetchEnvelope(STORAGE_BASENAME + owner.getId());
+			Envelope env = getContext().fetchEnvelope(getMessageBoxIdentifier(owner.getId()));
 			ShortMessageBox stored = (ShortMessageBox) env.getContent();
 			stored.clear();
 			Envelope updated = getContext().createEnvelope(env, stored);
@@ -243,6 +243,10 @@ public class ShortMessageService extends RESTService {
 			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_7, getContext().getMainAgent(), logMsg);
 		}
 		return result;
+	}
+
+	private static String getMessageBoxIdentifier(long receivingAgentId) {
+		return MESSAGEBOX_IDENTIFIER + receivingAgentId;
 	}
 
 }
