@@ -42,20 +42,15 @@ public class ShortMessageService extends RESTService {
 
 	private static final L2pLogger logger = L2pLogger.getInstance(ShortMessageService.class.getName());
 
-	/**
-	 * service properties with default values, can be overwritten with properties file
-	 * config/ShortMessageService.properties
-	 */
-	private long DEFAULT_MAXIMUM_MESSAGE_LENGTH = 140;
-	protected long maxMessageLength = DEFAULT_MAXIMUM_MESSAGE_LENGTH;
-
-	private final String STORAGE_BASENAME = "shortmessagestorage";
+	private static final long MAXIMUM_MESSAGE_LENGTH = 140;
+	private static final String STORAGE_BASENAME = "shortmessagestorage";
 
 	/**
 	 * Constructor: Loads the properties file and sets the values.
 	 */
 	public ShortMessageService() {
-		setFieldValues();
+		// enable service monitoring by default
+		this.monitor = true;
 	}
 
 	/**
@@ -72,8 +67,8 @@ public class ShortMessageService extends RESTService {
 			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_1, getContext().getMainAgent(), logMsg);
 			return logMsg;
 		}
-		if (message.length() > maxMessageLength) {
-			String logMsg = "Message too long! (Maximum: " + maxMessageLength + ")";
+		if (message.length() > MAXIMUM_MESSAGE_LENGTH) {
+			String logMsg = "Message too long! (Maximum: " + MAXIMUM_MESSAGE_LENGTH + ")";
 			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_2, getContext().getMainAgent(), logMsg);
 			return logMsg;
 		}
