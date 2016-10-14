@@ -1,6 +1,8 @@
 package i5.las2peer.services.shortMessageService;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Level;
 
 import javax.ws.rs.DefaultValue;
@@ -10,12 +12,11 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
-
-import com.google.common.net.HttpHeaders;
 
 import i5.las2peer.api.Context;
 import i5.las2peer.api.exceptions.ArtifactNotFoundException;
@@ -91,15 +92,19 @@ public class ShortMessageService extends RESTService {
 		}
 		Agent receiver = null;
 		try {
-			long receiverId = getContext().getLocalNode().getAgentIdForEmail(recipient);
-			receiver = getContext().getAgent(receiverId);
-		} catch (AgentNotKnownException | L2pSecurityException e) {
+			receiver = getContext().getAgent(Long.parseLong(recipient));
+		} catch (AgentNotKnownException | NumberFormatException e) {
 			try {
-				long receiverId = getContext().getLocalNode().getAgentIdForLogin(recipient);
+				long receiverId = getContext().getLocalNode().getAgentIdForEmail(recipient);
 				receiver = getContext().getAgent(receiverId);
 			} catch (AgentNotKnownException | L2pSecurityException e2) {
-				throw new AgentNotKnownException("There exists no agent for '" + recipient + "'! Email: "
-						+ e.getMessage() + " Login: " + e2.getMessage());
+				try {
+					long receiverId = getContext().getLocalNode().getAgentIdForLogin(recipient);
+					receiver = getContext().getAgent(receiverId);
+				} catch (AgentNotKnownException | L2pSecurityException e3) {
+					throw new AgentNotKnownException("There exists no agent for '" + recipient + "'! Email: "
+							+ e.getMessage() + " Login: " + e2.getMessage());
+				}
 			}
 		}
 		sendShortMessage(receiver, message);
@@ -173,6 +178,59 @@ public class ShortMessageService extends RESTService {
 		return MESSAGEBOX_IDENTIFIER + "-" + firstId + "->" + secondId + "#" + index;
 	}
 
+	public ArrayList<HashMap<String, Serializable>> getShortMessages(String contactId, long startIndex, long limit) {
+		ArrayList<HashMap<String, Serializable>> result = new ArrayList<>();
+		ArrayList<ShortMessage> messages = getShortMessagesReal(contactId, startIndex, limit);
+		for (ShortMessage msg : messages) {
+			result.add(msg.toMap());
+		}
+		return result;
+	}
+
+	private ArrayList<ShortMessage> getShortMessagesReal(String contactId, long startIndex, long limit) {
+		if (startIndex < 0) {
+			throw new IllegalArgumentException("Bad parameter: startIndex must be non negative");
+		}
+		ShortMessageService service = (ShortMessageService) Context.getCurrent().getService();
+		Agent activeAgent = service.getContext().getMainAgent();
+		ArrayList<ShortMessage> fetchedMessages = new ArrayList<>();
+		if (limit < 0) { // last x messages requested
+			// fetch last index for messages received from the given contact
+			startIndex = service.findLastMessageIndex(contactId, Long.toString(activeAgent.getId()), startIndex);
+			if (startIndex < 0) { // no message at all
+				startIndex = 0;
+			}
+		}
+		// fetch messages, till we reach the desired limit
+		while (fetchedMessages.size() < Math.abs(limit) || limit == 0) {
+			long nextIndex = startIndex;
+			if (limit < 0) {
+				nextIndex -= fetchedMessages.size();
+			} else {
+				nextIndex += fetchedMessages.size();
+			}
+			if (nextIndex < 0) {
+				// no more messages, OK
+				break;
+			}
+			try {
+				// fetch message with given index
+				String msgId = service.getMessageIdentifier(contactId, Long.toString(activeAgent.getId()), nextIndex);
+				Envelope env = service.getContext().fetchEnvelope(msgId);
+				ShortMessage stored = (ShortMessage) env.getContent(activeAgent);
+				fetchedMessages.add(stored);
+			} catch (ArtifactNotFoundException e) {
+				// no more messages, OK
+				break;
+			} catch (StorageException | SerializationException | L2pSecurityException | CryptoException e) {
+				fetchedMessages.add(new ShortMessage(null, null, nextIndex, e.toString()));
+			}
+		}
+		// sort all message by timestamp
+		fetchedMessages.sort(ShortMessageTimeComparator.INSTANCE);
+		return fetchedMessages;
+	}
+
 	@Override
 	protected void initResources() {
 		getResourceConfig().register(ResourceMessages.class);
@@ -213,55 +271,17 @@ public class ShortMessageService extends RESTService {
 		@GET
 		@Path("/{contactId}")
 		@Produces(MediaType.APPLICATION_JSON)
-		public Response getShortMessages(@PathParam("contactId") String contactId,
+		public Response getShortMessagesWeb(@PathParam("contactId") String contactId,
 				@HeaderParam("startIndex") @DefaultValue("0") long startIndex,
 				@HeaderParam("limit") @DefaultValue("-3") long limit) {
 			try {
-				if (startIndex < 0) {
-					return Response.status(Status.BAD_REQUEST).entity("Bad parameter: startIndex must be non negative")
-							.build();
-				}
 				ShortMessageService service = (ShortMessageService) Context.getCurrent().getService();
+				ArrayList<ShortMessage> fetchedMessages = service.getShortMessagesReal(contactId, startIndex, limit);
 				Agent activeAgent = service.getContext().getMainAgent();
-				ArrayList<ShortMessage> fetchedMessages = new ArrayList<>();
-				if (limit < 0) { // last x messages requested
-					// fetch last index for messages received from the given contact
-					startIndex = service.findLastMessageIndex(contactId, Long.toString(activeAgent.getId()),
-							startIndex);
-					if (startIndex < 0) { // no message at all
-						startIndex = 0;
-					}
-				}
-				// fetch messages, till we reach the desired limit
-				while (fetchedMessages.size() < Math.abs(limit) || limit == 0) {
-					try {
-						long nextIndex = startIndex;
-						if (limit < 0) {
-							nextIndex -= fetchedMessages.size();
-						} else {
-							nextIndex += fetchedMessages.size();
-						}
-						if (nextIndex < 0) {
-							// no more messages, OK
-							break;
-						}
-						// fetch message with given index
-						String msgId = service.getMessageIdentifier(contactId, Long.toString(activeAgent.getId()),
-								nextIndex);
-						Envelope env = service.getContext().fetchEnvelope(msgId);
-						ShortMessage stored = (ShortMessage) env.getContent(activeAgent);
-						fetchedMessages.add(stored);
-					} catch (ArtifactNotFoundException e) {
-						// no more messages, OK
-						break;
-					}
-				}
-				// sort all message by timestamp
-				fetchedMessages.sort(ShortMessageTimeComparator.INSTANCE);
 				// transform messages into JSON
 				JSONArray jsonMessages = new JSONArray();
 				for (ShortMessage msg : fetchedMessages) {
-					JSONObject jsonMsg = msg.toJSON();
+					JSONObject jsonMsg = msg.toJsonObject();
 					boolean isAuthor = false;
 					if (msg.getSenderId().equals(Long.toString(activeAgent.getId()))) {
 						isAuthor = true;

@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.junit.Test;
 
@@ -12,7 +13,6 @@ import i5.las2peer.p2p.ServiceNameVersion;
 import i5.las2peer.security.Mediator;
 import i5.las2peer.security.ServiceAgent;
 import i5.las2peer.security.UserAgent;
-import i5.las2peer.services.shortMessageService.ShortMessage;
 import i5.las2peer.services.shortMessageService.ShortMessageService;
 import i5.las2peer.testing.TestSuite;
 
@@ -55,26 +55,34 @@ public class TripleNodeRMITest {
 
 		// UserA send first message to UserB
 		System.out.println("user a sending first message to user b");
+		final String firstMessage = "First hello world to B from A";
 		mediatorA.invoke(ShortMessageService.class.getName(), "sendShortMessage",
-				new Serializable[] { userB.getId(), "First hello world to B from A" }, false);
+				new Serializable[] { Long.toString(userB.getId()), firstMessage }, false);
 
 		// UserB login at node 2
 		System.out.println("user b login at node 2");
 		Mediator mediatorB = nodes.get(2).createMediatorForAgent(userB);
 
 		// verify UserB received first message
-		ShortMessage[] messages1 = (ShortMessage[]) mediatorB.invoke(ShortMessageService.class.getName(),
-				"getShortMessages", new Serializable[] {}, false);
-		assertEquals(1, messages1.length);
+		@SuppressWarnings("unchecked")
+		ArrayList<HashMap<String, Serializable>> messages1 = (ArrayList<HashMap<String, Serializable>>) mediatorB
+				.invoke(ShortMessageService.class.getName(), "getShortMessages",
+						new Serializable[] { Long.toString(userA.getId()), 0L, 20L }, false);
+		assertEquals(1, messages1.size());
+		assertEquals(firstMessage, messages1.get(0).get("message"));
 
 		// UserA send second message to UserB
+		final String secondMessage = "Second hello world to B from A";
 		mediatorA.invoke(ShortMessageService.class.getName(), "sendShortMessage",
-				new Serializable[] { userB.getId(), "Second hello world to B from A" }, false);
+				new Serializable[] { Long.toString(userB.getId()), secondMessage }, false);
 
 		// verify UserB received two messages
-		ShortMessage[] messages2 = (ShortMessage[]) mediatorB.invoke(ShortMessageService.class.getName(),
-				"getShortMessages", new Serializable[] {}, false);
-		assertEquals(2, messages2.length);
+		@SuppressWarnings("unchecked")
+		ArrayList<HashMap<String, Serializable>> messages2 = (ArrayList<HashMap<String, Serializable>>) mediatorB
+				.invoke(ShortMessageService.class.getName(), "getShortMessages",
+						new Serializable[] { Long.toString(userA.getId()), 1L, 20L }, false);
+		assertEquals(1, messages2.size());
+		assertEquals(secondMessage, messages2.get(0).get("message"));
 
 		for (PastryNodeImpl node : nodes) {
 			node.shutDown();

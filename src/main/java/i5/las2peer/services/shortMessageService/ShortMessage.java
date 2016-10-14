@@ -3,6 +3,7 @@ package i5.las2peer.services.shortMessageService;
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 
 import net.minidev.json.JSONObject;
 
@@ -44,13 +45,19 @@ public class ShortMessage implements Serializable {
 		return timeSend;
 	}
 
-	public JSONObject toJSON() {
-		JSONObject result = new JSONObject();
+	public HashMap<String, Serializable> toMap() {
+		HashMap<String, Serializable> result = new HashMap<>();
 		result.put("senderId", senderId);
 		result.put("recipientId", recipientId);
 		result.put("index", index);
 		result.put("message", message);
 		result.put("timeSend", timeSend);
+		return result;
+	}
+
+	public JSONObject toJsonObject() {
+		JSONObject result = new JSONObject();
+		result.putAll(toMap());
 		return result;
 	}
 
