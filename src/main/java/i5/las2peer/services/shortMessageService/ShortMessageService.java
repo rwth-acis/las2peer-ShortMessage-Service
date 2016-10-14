@@ -79,11 +79,11 @@ public class ShortMessageService extends RESTService {
 	 * 
 	 * @param recipient The login name or email address representing the recipient.
 	 * @param message The actual message text as {@link String}.
-	 * @throws AgentNotKnownException
-	 * @throws StorageException
-	 * @throws CryptoException
-	 * @throws L2pSecurityException
-	 * @throws SerializationException
+	 * @throws AgentNotKnownException If the given recipient can not be identified.
+	 * @throws StorageException If an issue with the storage occurs.
+	 * @throws CryptoException If an cryptographic issue occurs.
+	 * @throws L2pSecurityException If a security issue occurs.
+	 * @throws SerializationException If a serialization issue occurs.
 	 */
 	public void sendShortMessage(String recipient, String message) throws IllegalArgumentException,
 			AgentNotKnownException, StorageException, CryptoException, L2pSecurityException, SerializationException {
@@ -115,10 +115,10 @@ public class ShortMessageService extends RESTService {
 	 * 
 	 * @param receivingAgent The recipients Agent with read permission.
 	 * @param message The actual message text as {@link String}.
-	 * @throws StorageException
-	 * @throws CryptoException
-	 * @throws L2pSecurityException
-	 * @throws SerializationException
+	 * @throws StorageException If an issue with the storage occurs.
+	 * @throws CryptoException If an cryptographic issue occurs.
+	 * @throws L2pSecurityException If a security issue occurs.
+	 * @throws SerializationException If a serialization issue occurs.
 	 */
 	public void sendShortMessage(Agent receivingAgent, String message)
 			throws StorageException, CryptoException, L2pSecurityException, SerializationException {
@@ -261,12 +261,14 @@ public class ShortMessageService extends RESTService {
 		}
 
 		/**
-		 * Limit < 0 means load last x messages Limit > 0 load x messages Limit = 0 load infinite messages
+		 * Limit &lt; 0 means load last x messages Limit &gt; 0 load x messages Limit = 0 load infinite messages
 		 * 
-		 * @param contactId
-		 * @param lastKnownIndex
-		 * @param limit
-		 * @return
+		 * @param contactId The conversation partners agent id.
+		 * @param startIndex The first message to be retrieved.
+		 * @param limit The maximum number of messages that should be retrieved. If negative, the latest number of
+		 *            messages in this conversation is retrieved. e. g. limit = 20 returns the first 20 messages
+		 *            starting from startIndex and limit = -7 returns the last 7 messages of the conversation.
+		 * @return Returns the messages formatted as JSON String, wrapped in an HTML response object.
 		 */
 		@GET
 		@Path("/{contactId}")
