@@ -1,24 +1,38 @@
 package i5.las2peer.services.shortMessageService;
 
-import java.text.SimpleDateFormat;
-import java.util.GregorianCalendar;
+import java.util.ArrayList;
 import java.util.logging.Level;
 
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.Response.Status;
 
+import com.google.common.net.HttpHeaders;
+
+import i5.las2peer.api.Context;
 import i5.las2peer.api.exceptions.ArtifactNotFoundException;
+import i5.las2peer.api.exceptions.StorageException;
 import i5.las2peer.logging.L2pLogger;
-import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.p2p.AgentNotKnownException;
 import i5.las2peer.persistency.Envelope;
 import i5.las2peer.restMapper.RESTService;
+import i5.las2peer.restMapper.annotations.ServicePath;
 import i5.las2peer.security.Agent;
-import i5.las2peer.security.GroupAgent;
 import i5.las2peer.security.L2pSecurityException;
-import i5.las2peer.security.ServiceAgent;
 import i5.las2peer.security.UserAgent;
+import i5.las2peer.services.shortMessageService.ShortMessage.ShortMessageTimeComparator;
+import i5.las2peer.tools.CryptoException;
+import i5.las2peer.tools.SerializationException;
+import net.minidev.json.JSONArray;
+import net.minidev.json.JSONObject;
 
 /**
  * This is a middleware service for las2peer that provides methods to send short messages via a las2peer network. It is
@@ -37,216 +51,246 @@ import i5.las2peer.security.UserAgent;
  * this tool in the las2peer-Template-Project of the RWTH-ACIS group.
  * 
  */
-@Path("/sms-service")
+@ServicePath("/sms-service")
 public class ShortMessageService extends RESTService {
 
 	private static final L2pLogger logger = L2pLogger.getInstance(ShortMessageService.class.getName());
 
 	private static final long MAXIMUM_MESSAGE_LENGTH = 140;
-	private static final String MESSAGEBOX_IDENTIFIER = "shortmessagebox-";
+	private static final String MESSAGEBOX_IDENTIFIER = "shortmessagebox";
+
+	private static final String RESOURCE_MESSAGES_BASENAME = "/messages";
+	private static final String RESOURCE_PROPERTIES_BASENAME = "/properties";
 
 	/**
 	 * Constructor: Loads the properties file and sets the values.
 	 */
 	public ShortMessageService() {
-		// enable service monitoring by default
+		// enable service monitoring
 		this.monitor = true;
+	}
+
+	/**
+	 * Sends a {@link ShortMessage} to a recipient specified by login or email. This method is intended to be used with
+	 * RMI calls.
+	 * 
+	 * WARNING: THIS METHOD IS UNSAFE, SINCE THE AGENT ID MAY BE LINKED TO ANYONE!
+	 * 
+	 * @param recipient The login name or email address representing the recipient.
+	 * @param message The actual message text as {@link String}.
+	 * @throws AgentNotKnownException
+	 * @throws StorageException
+	 * @throws CryptoException
+	 * @throws L2pSecurityException
+	 * @throws SerializationException
+	 */
+	public void sendShortMessage(String recipient, String message) throws IllegalArgumentException,
+			AgentNotKnownException, StorageException, CryptoException, L2pSecurityException, SerializationException {
+		if (recipient == null || recipient.isEmpty()) {
+			throw new IllegalArgumentException("No recipient specified!");
+		}
+		Agent receiver = null;
+		try {
+			long receiverId = getContext().getLocalNode().getAgentIdForEmail(recipient);
+			receiver = getContext().getAgent(receiverId);
+		} catch (AgentNotKnownException | L2pSecurityException e) {
+			try {
+				long receiverId = getContext().getLocalNode().getAgentIdForLogin(recipient);
+				receiver = getContext().getAgent(receiverId);
+			} catch (AgentNotKnownException | L2pSecurityException e2) {
+				throw new AgentNotKnownException("There exists no agent for '" + recipient + "'! Email: "
+						+ e.getMessage() + " Login: " + e2.getMessage());
+			}
+		}
+		sendShortMessage(receiver, message);
 	}
 
 	/**
 	 * Sends a {@link ShortMessage} to a recipient specified by his agent id.
 	 * 
-	 * @param receivingAgentId the id of the agent representing the recipient
-	 * @param message the actual message text as {@link String}
-	 * @return success or error message
+	 * @param receivingAgent The recipients Agent with read permission.
+	 * @param message The actual message text as {@link String}.
+	 * @throws StorageException
+	 * @throws CryptoException
+	 * @throws L2pSecurityException
+	 * @throws SerializationException
 	 */
-	public String sendShortMessage(long receivingAgentId, String message) {
+	public void sendShortMessage(Agent receivingAgent, String message)
+			throws StorageException, CryptoException, L2pSecurityException, SerializationException {
+		// validate receiving agent
+		if (receivingAgent == null) {
+			throw new IllegalArgumentException("Receiving agent must not be null!");
+		}
 		// validate message
 		if (message == null || message.isEmpty()) {
-			String logMsg = "Message can not be empty!";
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_1, getContext().getMainAgent(), logMsg);
-			return logMsg;
+			throw new IllegalArgumentException("Message must not be empty!");
 		}
 		if (message.length() > MAXIMUM_MESSAGE_LENGTH) {
-			String logMsg = "Message too long! (Maximum: " + MAXIMUM_MESSAGE_LENGTH + ")";
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_2, getContext().getMainAgent(), logMsg);
-			return logMsg;
+			throw new IllegalArgumentException("Message too long! (Maximum: " + MAXIMUM_MESSAGE_LENGTH + ")");
 		}
 		UserAgent sendingAgent = (UserAgent) getContext().getMainAgent();
-		// create short message
-		ShortMessage msg = new ShortMessage(sendingAgent.getId(), receivingAgentId, message);
-		msg.setSendTimestamp(new GregorianCalendar());
-		// persist message to recipient storage
-		try {
-			Envelope env = null;
-			ShortMessageBox stored = null;
+		// persist message to shared storage
+		// TODO cache last index in ServiceAgent protected storage
+		long nextIndex = findLastMessageIndex(Long.toString(sendingAgent.getId()),
+				Long.toString(receivingAgent.getId()), 0) + 1;
+		String msgId = getMessageIdentifier(Long.toString(sendingAgent.getId()), Long.toString(receivingAgent.getId()),
+				nextIndex);
+		ShortMessage msg = new ShortMessage(Long.toString(sendingAgent.getId()), Long.toString(receivingAgent.getId()),
+				nextIndex, message);
+		Envelope env = getContext().createEnvelope(msgId, msg, sendingAgent, receivingAgent);
+		getContext().storeEnvelope(env);
+	}
+
+	private long findLastMessageIndex(String sendingAgentId, String receivingAgentId, long startIndex) {
+		if (startIndex < 0) {
+			throw new IllegalArgumentException("startIndex must be non negative");
+		}
+		long c;
+		// TODO implement this as binary search
+		// after number overflow 'c' will be smaller than zero
+		for (c = startIndex; c >= 0 && c < Long.MAX_VALUE; c++) {
 			try {
-				env = getContext().fetchEnvelope(getMessageBoxIdentifier(receivingAgentId));
-				// get messages from storage
-				stored = (ShortMessageBox) env.getContent(getAgent());
-				// add new message
-				stored.addMessage(msg);
-				env = getContext().createEnvelope(env, stored, getAgent());
+				getContext().fetchEnvelope(getMessageIdentifier(sendingAgentId, receivingAgentId, c));
 			} catch (ArtifactNotFoundException e) {
-				String logMsg = "Network storage not found. Creating new one. " + e.toString();
-				logger.info(logMsg);
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_3, getContext().getMainAgent(), logMsg);
-				stored = new ShortMessageBox(1);
-				// add new message
-				stored.addMessage(msg);
-				env = getContext().createEnvelope(getMessageBoxIdentifier(receivingAgentId), stored, getAgent());
+				return c - 1;
+			} catch (StorageException e) {
+				// XXX do we have to care about this? maybe just log it
 			}
-			getContext().storeEnvelope(env);
-			String logMsg = "stored " + stored.size() + " messages in network storage";
-			logger.info(logMsg);
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_1, getContext().getMainAgent(), logMsg);
-			return "Message send successfully";
-		} catch (Exception e) {
-			String logMsg = "Can't persist short messages to network storage!";
-			logger.log(Level.SEVERE, logMsg, e);
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_4, getContext().getMainAgent(), logMsg);
 		}
-		return "Failure sending message";
+		return c;
 	}
 
-	/**
-	 * Sends a {@link ShortMessage} to a recipient specified by login or email.
-	 * 
-	 * @param message the actual message text as {@link String}
-	 * @param recipient the login name or email address representing the recipient
-	 * @return success or error message
-	 */
-	@GET
-	@Path("/sendShortMessage/{recipient}/{message}")
-	public String sendShortMessage(@PathParam("recipient") String recipient, @PathParam("message") String message) {
-		if (recipient == null || recipient.isEmpty()) {
-			String logMsg = "No recipient specified!";
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_2, getContext().getMainAgent(), logMsg);
-			return logMsg;
+	private String getMessageIdentifier(String sendingAgentId, String receivingAgentId, long index) {
+		if (index < 0) {
+			throw new IllegalArgumentException("index must be non negative");
 		}
-		long receiverId;
-		try {
-			receiverId = getContext().getLocalNode().getAgentIdForEmail(recipient);
-		} catch (AgentNotKnownException | L2pSecurityException e) {
+		String firstId = sendingAgentId;
+		String secondId = receivingAgentId;
+		if (sendingAgentId.compareTo(receivingAgentId) > 0) {
+			firstId = receivingAgentId;
+			secondId = sendingAgentId;
+		}
+		return MESSAGEBOX_IDENTIFIER + "-" + firstId + "->" + secondId + "#" + index;
+	}
+
+	@Override
+	protected void initResources() {
+		getResourceConfig().register(ResourceMessages.class);
+		getResourceConfig().register(ResourceProperties.class);
+	}
+
+	@Path(RESOURCE_MESSAGES_BASENAME)
+	public static class ResourceMessages {
+
+		@POST
+		@Path("/{contactId}")
+		@Produces(MediaType.TEXT_PLAIN)
+		public Response sendShortMessageWeb(@PathParam("contactId") String contactId, String message) {
 			try {
-				receiverId = getContext().getLocalNode().getAgentIdForLogin(recipient);
-			} catch (AgentNotKnownException | L2pSecurityException e2) {
-				String logMsg = "There exists no agent for '" + recipient + "'! Email: " + e.getMessage() + " Login: "
-						+ e2.getMessage();
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_5, getContext().getMainAgent(), logMsg);
-				return logMsg;
-			}
-		}
-		L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_9, getContext().getMainAgent(), "message send requested");
-		return sendShortMessage(receiverId, message);
-	}
-
-	/**
-	 * Gets all {@link ShortMessage}'s for the active agent.
-	 * 
-	 * @return array with all messages
-	 */
-	public ShortMessage[] getShortMessages() {
-		try {
-			// load messages from network
-			Agent owner = getContext().getMainAgent();
-			Envelope env = getContext().fetchEnvelope(getMessageBoxIdentifier(owner.getId()));
-			ShortMessageBox stored = (ShortMessageBox) env.getContent(getAgent());
-			String logMsg = "Loaded " + stored.size() + " messages from network storage";
-			logger.info(logMsg);
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_3, getContext().getMainAgent(), logMsg);
-			ShortMessage[] result = stored.getMessages();
-			return result;
-		} catch (ArtifactNotFoundException e) {
-			String logMsg = "No messages found in network!";
-			logger.log(Level.INFO, logMsg);
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_4, getContext().getMainAgent(), logMsg);
-		} catch (Exception e) {
-			String logMsg = "Can't read messages from network storage!";
-			logger.log(Level.SEVERE, logMsg, e);
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_6, getContext().getMainAgent(), logMsg);
-		}
-		return new ShortMessage[0];
-	}
-
-	/**
-	 * Gets messages separated by newline (\n) for the requesting agent. Sender and recipient agent ids are replaced
-	 * with their names.
-	 * 
-	 * @return A String with messages or "No messages"
-	 */
-	@GET
-	@Path("/getShortMessagesAsString")
-	public String getShortMessagesAsString() {
-		ShortMessage[] messages = getShortMessages();
-		if (messages == null || messages.length == 0) {
-			String logMsg = "No messages";
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_5, getContext().getMainAgent(), logMsg);
-			return logMsg;
-		} else {
-			SimpleDateFormat sdf = new SimpleDateFormat();
-			StringBuilder sb = new StringBuilder();
-			for (ShortMessage sms : messages) {
-				sb.append(sdf.format(sms.getSendTimestamp().getTime()) + " from " + getAgentName(sms.getSenderId())
-						+ " to " + getAgentName(sms.getRecipientId()) + ": " + new String(sms.getContent()) + "\n");
-			}
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_6, getContext().getMainAgent(), "messages fetched");
-			return sb.toString();
-		}
-	}
-
-	/**
-	 * Clears all messages for the active agent inside the storage. This can't be undone!
-	 */
-	@GET
-	@Path("/deleteShortMessages")
-	public void deleteShortMessages() {
-		try {
-			Agent owner = getContext().getMainAgent();
-			Envelope env = getContext().fetchEnvelope(getMessageBoxIdentifier(owner.getId()));
-			ShortMessageBox stored = (ShortMessageBox) env.getContent();
-			stored.clear();
-			Envelope updated = getContext().createEnvelope(env, stored);
-			getContext().storeEnvelope(updated);
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_7, getContext().getMainAgent(), "message deleted");
-		} catch (Exception e) {
-			String logMsg = "Can't clear messages from network storage!";
-			logger.log(Level.SEVERE, logMsg, e);
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_6, getContext().getMainAgent(), logMsg);
-		}
-	}
-
-	/**
-	 * Gets the name for a specified agent id. For UserAgent's the login name, for ServiceAgent's the class name and for
-	 * GroupAgent's the group name is retrieved.
-	 * 
-	 * @param agentId The agent id that name should be retrieved
-	 * @return Returns the agent name for the given agentId or the agentId as String if an error occurred.
-	 */
-	protected String getAgentName(long agentId) {
-		String result = Long.toString(agentId);
-		try {
-			Agent agent = getContext().getLocalNode().getAgent(agentId);
-			if (agent != null) {
-				if (agent instanceof UserAgent) {
-					result = ((UserAgent) agent).getLoginName();
-				} else if (agent instanceof ServiceAgent) {
-					result = ((ServiceAgent) agent).getServiceNameVersion().getName();
-				} else if (agent instanceof GroupAgent) {
-					result = ((GroupAgent) agent).getName();
+				if (contactId == null || contactId.isEmpty()) {
+					return Response.status(Status.BAD_REQUEST).entity("Missing parameter recipientId").build();
 				}
+				ShortMessageService service = (ShortMessageService) Context.getCurrent().getService();
+				Agent recipient = service.getContext().getAgent(Long.valueOf(contactId));
+				service.sendShortMessage(recipient, message);
+				return Response.ok("MESSAGE_SEND_SUCCESSFULLY").build();
+			} catch (Exception e) {
+				String msg = "Could not send message!";
+				logger.log(Level.SEVERE, msg, e);
+				return Response.status(Status.INTERNAL_SERVER_ERROR)
+						.entity(msg + " See log for details.\nReason: " + e.getMessage()).build();
 			}
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_9, getContext().getMainAgent(), "agent name resolved");
-		} catch (Exception e) {
-			String logMsg = "Could not resolve agent id " + agentId;
-			logger.log(Level.SEVERE, logMsg, e);
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_ERROR_7, getContext().getMainAgent(), logMsg);
 		}
-		return result;
+
+		/**
+		 * Limit < 0 means load last x messages Limit > 0 load x messages Limit = 0 load infinite messages
+		 * 
+		 * @param contactId
+		 * @param lastKnownIndex
+		 * @param limit
+		 * @return
+		 */
+		@GET
+		@Path("/{contactId}")
+		@Produces(MediaType.APPLICATION_JSON)
+		public Response getShortMessages(@PathParam("contactId") String contactId,
+				@HeaderParam("startIndex") @DefaultValue("0") long startIndex,
+				@HeaderParam("limit") @DefaultValue("-3") long limit) {
+			try {
+				if (startIndex < 0) {
+					return Response.status(Status.BAD_REQUEST).entity("Bad parameter: startIndex must be non negative")
+							.build();
+				}
+				ShortMessageService service = (ShortMessageService) Context.getCurrent().getService();
+				Agent activeAgent = service.getContext().getMainAgent();
+				ArrayList<ShortMessage> fetchedMessages = new ArrayList<>();
+				if (limit < 0) { // last x messages requested
+					// fetch last index for messages received from the given contact
+					startIndex = service.findLastMessageIndex(contactId, Long.toString(activeAgent.getId()),
+							startIndex);
+					if (startIndex < 0) { // no message at all
+						startIndex = 0;
+					}
+				}
+				// fetch messages, till we reach the desired limit
+				while (fetchedMessages.size() < Math.abs(limit) || limit == 0) {
+					try {
+						long nextIndex = startIndex;
+						if (limit < 0) {
+							nextIndex -= fetchedMessages.size();
+						} else {
+							nextIndex += fetchedMessages.size();
+						}
+						if (nextIndex < 0) {
+							// no more messages, OK
+							break;
+						}
+						// fetch message with given index
+						String msgId = service.getMessageIdentifier(contactId, Long.toString(activeAgent.getId()),
+								nextIndex);
+						Envelope env = service.getContext().fetchEnvelope(msgId);
+						ShortMessage stored = (ShortMessage) env.getContent(activeAgent);
+						fetchedMessages.add(stored);
+					} catch (ArtifactNotFoundException e) {
+						// no more messages, OK
+						break;
+					}
+				}
+				// sort all message by timestamp
+				fetchedMessages.sort(ShortMessageTimeComparator.INSTANCE);
+				// transform messages into JSON
+				JSONArray jsonMessages = new JSONArray();
+				for (ShortMessage msg : fetchedMessages) {
+					JSONObject jsonMsg = msg.toJSON();
+					boolean isAuthor = false;
+					if (msg.getSenderId().equals(Long.toString(activeAgent.getId()))) {
+						isAuthor = true;
+					}
+					jsonMsg.put("isAuthor", isAuthor);
+					jsonMessages.add(jsonMsg);
+				}
+				ResponseBuilder responseBuilder = Response.ok(jsonMessages.toJSONString());
+				responseBuilder.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+				return responseBuilder.build();
+			} catch (Exception e) {
+				String msg = "Could not read messages!";
+				logger.log(Level.SEVERE, msg, e);
+				return Response.status(Status.INTERNAL_SERVER_ERROR).entity(msg + " See log for details.").build();
+			}
+		}
+
 	}
 
-	private static String getMessageBoxIdentifier(long receivingAgentId) {
-		return MESSAGEBOX_IDENTIFIER + receivingAgentId;
+	@Path(RESOURCE_PROPERTIES_BASENAME)
+	public static class ResourceProperties {
+
+		@GET
+		@Path("/maximumMessageLength")
+		@Produces(MediaType.TEXT_PLAIN)
+		public Response getMaximumMessageLength() {
+			return Response.ok(Long.toString(MAXIMUM_MESSAGE_LENGTH)).build();
+		}
+
 	}
 
 }
