@@ -58,7 +58,7 @@ public class ShortMessageService extends RESTService {
 	private static final L2pLogger logger = L2pLogger.getInstance(ShortMessageService.class.getName());
 
 	private static final long MAXIMUM_MESSAGE_LENGTH = 140;
-	private static final String MESSAGEBOX_IDENTIFIER = "shortmessagebox";
+	private static final String MESSAGE_IDENTIFIER_PREFIX = "shortmessage";
 
 	private static final String RESOURCE_MESSAGES_BASENAME = "/messages";
 	private static final String RESOURCE_PROPERTIES_BASENAME = "/properties";
@@ -175,7 +175,7 @@ public class ShortMessageService extends RESTService {
 			firstId = receivingAgentId;
 			secondId = sendingAgentId;
 		}
-		return MESSAGEBOX_IDENTIFIER + "-" + firstId + "->" + secondId + "#" + index;
+		return MESSAGE_IDENTIFIER_PREFIX + firstId + "->" + secondId + "#" + index;
 	}
 
 	public ArrayList<HashMap<String, Serializable>> getShortMessages(String contactId, long startIndex, long limit) {
