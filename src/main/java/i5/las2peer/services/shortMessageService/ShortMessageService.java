@@ -294,6 +294,9 @@ public class ShortMessageService extends RESTService {
 				ResponseBuilder responseBuilder = Response.ok(jsonMessages.toJSONString());
 				responseBuilder.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 				return responseBuilder.build();
+			} catch (IllegalArgumentException e) {
+				logger.log(Level.WARNING, e.getMessage());
+				return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build();
 			} catch (Exception e) {
 				String msg = "Could not read messages!";
 				logger.log(Level.SEVERE, msg, e);
