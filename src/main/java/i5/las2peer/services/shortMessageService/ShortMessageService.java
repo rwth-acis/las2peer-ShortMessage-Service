@@ -12,10 +12,8 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import i5.las2peer.api.Context;
@@ -294,17 +292,21 @@ public class ShortMessageService extends RESTService {
 					jsonMsg.put("isAuthor", isAuthor);
 					jsonMessages.add(jsonMsg);
 				}
-				ResponseBuilder responseBuilder = Response.ok(jsonMessages.toJSONString());
-				responseBuilder.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-				return responseBuilder.build();
+				return Response.ok(jsonMessages.toJSONString()).build();
 			} catch (IllegalArgumentException e) {
 				logger.log(Level.WARNING, e.getMessage());
-				return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build();
+				return buildJSONResponse(Status.BAD_REQUEST, e.getMessage());
 			} catch (Exception e) {
 				String msg = "Could not read messages!";
 				logger.log(Level.SEVERE, msg, e);
-				return Response.status(Status.INTERNAL_SERVER_ERROR).entity(msg + " See log for details.").build();
+				return buildJSONResponse(Status.INTERNAL_SERVER_ERROR, msg + " See log for details.");
 			}
+		}
+
+		private static Response buildJSONResponse(Status status, String message) {
+			JSONArray jsonMessage = new JSONArray();
+			jsonMessage.add(message);
+			return Response.status(status).entity(jsonMessage.toJSONString()).build();
 		}
 
 	}
