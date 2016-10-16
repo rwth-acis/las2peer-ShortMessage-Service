@@ -252,6 +252,9 @@ public class ShortMessageService extends RESTService {
 				Agent recipient = service.getContext().getAgent(Long.valueOf(contactId));
 				service.sendShortMessage(recipient, message);
 				return Response.ok("MESSAGE_SEND_SUCCESSFULLY").build();
+			} catch (IllegalArgumentException e) {
+				logger.log(Level.INFO, e.getMessage());
+				return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build();
 			} catch (Exception e) {
 				String msg = "Could not send message!";
 				logger.log(Level.SEVERE, msg, e);
