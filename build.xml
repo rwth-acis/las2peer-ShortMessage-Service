@@ -1,4 +1,4 @@
-<project name="las2peer-ShortMessageService" default="jar" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="las2peer-ShortMessage-Service" default="jar" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
 
 	<property name="src.main" location="src/main/java" />
 	<property name="src.junit" location="src/test/java" />
