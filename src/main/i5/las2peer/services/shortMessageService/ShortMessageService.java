@@ -30,6 +30,11 @@ import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.shortMessageService.ShortMessage.ShortMessageTimeComparator;
 import i5.las2peer.tools.CryptoException;
 import i5.las2peer.tools.SerializationException;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.Contact;
+import io.swagger.annotations.Info;
+import io.swagger.annotations.License;
+import io.swagger.annotations.SwaggerDefinition;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 
@@ -52,6 +57,8 @@ import net.minidev.json.JSONObject;
  */
 @ServicePath("/sms-service")
 public class ShortMessageService extends RESTService {
+
+	public static final String API_VERSION = "1.0";
 
 	private static final L2pLogger logger = L2pLogger.getInstance(ShortMessageService.class.getName());
 
@@ -235,6 +242,20 @@ public class ShortMessageService extends RESTService {
 		getResourceConfig().register(ResourceProperties.class);
 	}
 
+	@Api(
+			value = "messages")
+	@SwaggerDefinition(
+			info = @Info(
+					title = "las2peer ShortMessage Service",
+					version = API_VERSION,
+					description = "A las2peer messaging service for demonstration purposes.",
+					contact = @Contact(
+							name = "ACIS Group",
+							url = "https://las2peer.org/",
+							email = "cuje@dbis.rwth-aachen.de"),
+					license = @License(
+							name = "ACIS License (BSD3)",
+							url = "https://github.com/rwth-acis/las2peer-ShortMessage-Service/blob/master/LICENSE")))
 	@Path(RESOURCE_MESSAGES_BASENAME)
 	public static class ResourceMessages {
 
@@ -311,6 +332,20 @@ public class ShortMessageService extends RESTService {
 
 	}
 
+	@Api(
+			value = "properties")
+	@SwaggerDefinition(
+			info = @Info(
+					title = "las2peer ShortMessage Service",
+					version = API_VERSION,
+					description = "A las2peer messaging service for demonstration purposes.",
+					contact = @Contact(
+							name = "ACIS Group",
+							url = "https://las2peer.org/",
+							email = "cuje@dbis.rwth-aachen.de"),
+					license = @License(
+							name = "ACIS License (BSD3)",
+							url = "https://github.com/rwth-acis/las2peer-ShortMessage-Service/blob/master/LICENSE")))
 	@Path(RESOURCE_PROPERTIES_BASENAME)
 	public static class ResourceProperties {
 
