@@ -17,19 +17,19 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import i5.las2peer.api.Context;
-import i5.las2peer.api.exceptions.ArtifactNotFoundException;
-import i5.las2peer.api.exceptions.StorageException;
+import i5.las2peer.api.persistency.Envelope;
+import i5.las2peer.api.persistency.EnvelopeAccessDeniedException;
+import i5.las2peer.api.persistency.EnvelopeException;
+import i5.las2peer.api.persistency.EnvelopeNotFoundException;
+import i5.las2peer.api.persistency.EnvelopeOperationFailedException;
+import i5.las2peer.api.security.Agent;
+import i5.las2peer.api.security.AgentNotFoundException;
+import i5.las2peer.api.security.AgentOperationFailedException;
+import i5.las2peer.api.security.UserAgent;
 import i5.las2peer.logging.L2pLogger;
-import i5.las2peer.p2p.AgentNotKnownException;
-import i5.las2peer.persistency.Envelope;
 import i5.las2peer.restMapper.RESTService;
 import i5.las2peer.restMapper.annotations.ServicePath;
-import i5.las2peer.security.Agent;
-import i5.las2peer.security.L2pSecurityException;
-import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.shortMessageService.ShortMessage.ShortMessageTimeComparator;
-import i5.las2peer.tools.CryptoException;
-import i5.las2peer.tools.SerializationException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.Contact;
 import io.swagger.annotations.Info;
@@ -72,8 +72,6 @@ public class ShortMessageService extends RESTService {
 	 * Constructor: Loads the properties file and sets the values.
 	 */
 	public ShortMessageService() {
-		// enable service monitoring
-		this.monitor = true;
 	}
 
 	/**
@@ -84,30 +82,26 @@ public class ShortMessageService extends RESTService {
 	 * 
 	 * @param recipient The login name or email address representing the recipient.
 	 * @param message The actual message text as {@link String}.
-	 * @throws AgentNotKnownException If the given recipient can not be identified.
-	 * @throws StorageException If an issue with the storage occurs.
-	 * @throws CryptoException If an cryptographic issue occurs.
-	 * @throws L2pSecurityException If a security issue occurs.
-	 * @throws SerializationException If a serialization issue occurs.
+	 * @throws AgentNotFoundException If the given recipient can not be identified.
 	 */
-	public void sendShortMessage(String recipient, String message) throws IllegalArgumentException,
-			AgentNotKnownException, StorageException, CryptoException, L2pSecurityException, SerializationException {
+	public void sendShortMessage(String recipient, String message)
+			throws IllegalArgumentException, AgentNotFoundException, AgentOperationFailedException, EnvelopeException {
 		if (recipient == null || recipient.isEmpty()) {
 			throw new IllegalArgumentException("No recipient specified!");
 		}
 		Agent receiver = null;
 		try {
-			receiver = getContext().getAgent(Long.parseLong(recipient));
-		} catch (AgentNotKnownException | NumberFormatException e) {
+			receiver = Context.get().fetchAgent(recipient);
+		} catch (AgentNotFoundException | NumberFormatException e) {
 			try {
-				long receiverId = getContext().getLocalNode().getAgentIdForEmail(recipient);
-				receiver = getContext().getAgent(receiverId);
-			} catch (AgentNotKnownException | L2pSecurityException e2) {
+				String receiverId = Context.get().getUserAgentIdentifierByEmail(recipient);
+				receiver = Context.get().fetchAgent(receiverId);
+			} catch (AgentNotFoundException e2) {
 				try {
-					long receiverId = getContext().getLocalNode().getAgentIdForLogin(recipient);
-					receiver = getContext().getAgent(receiverId);
-				} catch (AgentNotKnownException | L2pSecurityException e3) {
-					throw new AgentNotKnownException("There exists no agent for '" + recipient + "'! Email: "
+					String receiverId = Context.get().getUserAgentIdentifierByLoginName(recipient);
+					receiver = Context.get().fetchAgent(receiverId);
+				} catch (AgentNotFoundException e3) {
+					throw new AgentNotFoundException("There exists no agent for '" + recipient + "'! Email: "
 							+ e.getMessage() + " Login: " + e2.getMessage());
 				}
 			}
@@ -120,13 +114,8 @@ public class ShortMessageService extends RESTService {
 	 * 
 	 * @param receivingAgent The recipients Agent with read permission.
 	 * @param message The actual message text as {@link String}.
-	 * @throws StorageException If an issue with the storage occurs.
-	 * @throws CryptoException If an cryptographic issue occurs.
-	 * @throws L2pSecurityException If a security issue occurs.
-	 * @throws SerializationException If a serialization issue occurs.
 	 */
-	public void sendShortMessage(Agent receivingAgent, String message)
-			throws StorageException, CryptoException, L2pSecurityException, SerializationException {
+	public void sendShortMessage(Agent receivingAgent, String message) throws EnvelopeException {
 		// validate receiving agent
 		if (receivingAgent == null) {
 			throw new IllegalArgumentException("Receiving agent must not be null!");
@@ -138,17 +127,17 @@ public class ShortMessageService extends RESTService {
 		if (message.length() > MAXIMUM_MESSAGE_LENGTH) {
 			throw new IllegalArgumentException("Message too long! (Maximum: " + MAXIMUM_MESSAGE_LENGTH + ")");
 		}
-		UserAgent sendingAgent = (UserAgent) getContext().getMainAgent();
+		UserAgent sendingAgent = (UserAgent) Context.get().getMainAgent();
 		// persist message to shared storage
 		// TODO cache last index in ServiceAgent protected storage
-		long nextIndex = findLastMessageIndex(Long.toString(sendingAgent.getId()),
-				Long.toString(receivingAgent.getId()), 0) + 1;
-		String msgId = getMessageIdentifier(Long.toString(sendingAgent.getId()), Long.toString(receivingAgent.getId()),
-				nextIndex);
-		ShortMessage msg = new ShortMessage(Long.toString(sendingAgent.getId()), Long.toString(receivingAgent.getId()),
-				nextIndex, message);
-		Envelope env = getContext().createEnvelope(msgId, msg, sendingAgent, receivingAgent);
-		getContext().storeEnvelope(env);
+		long nextIndex = findLastMessageIndex(sendingAgent.getIdentifier(), receivingAgent.getIdentifier(), 0) + 1;
+		String msgId = getMessageIdentifier(sendingAgent.getIdentifier(), receivingAgent.getIdentifier(), nextIndex);
+		ShortMessage msg = new ShortMessage(sendingAgent.getIdentifier(), receivingAgent.getIdentifier(), nextIndex,
+				message);
+		Envelope env = Context.get().createEnvelope(msgId, sendingAgent);
+		env.addReader(receivingAgent);
+		env.setContent(msg);
+		Context.get().storeEnvelope(env);
 	}
 
 	private long findLastMessageIndex(String sendingAgentId, String receivingAgentId, long startIndex) {
@@ -160,10 +149,10 @@ public class ShortMessageService extends RESTService {
 		// after number overflow 'c' will be smaller than zero
 		for (c = startIndex; c >= 0 && c < Long.MAX_VALUE; c++) {
 			try {
-				getContext().fetchEnvelope(getMessageIdentifier(sendingAgentId, receivingAgentId, c));
-			} catch (ArtifactNotFoundException e) {
+				Context.get().requestEnvelope(getMessageIdentifier(sendingAgentId, receivingAgentId, c));
+			} catch (EnvelopeNotFoundException e) {
 				return c - 1;
-			} catch (StorageException e) {
+			} catch (EnvelopeException e) {
 				// XXX do we have to care about this? maybe just log it
 			}
 		}
@@ -197,11 +186,11 @@ public class ShortMessageService extends RESTService {
 			throw new IllegalArgumentException("Bad parameter: startIndex must be non negative");
 		}
 		ShortMessageService service = (ShortMessageService) Context.getCurrent().getService();
-		Agent activeAgent = service.getContext().getMainAgent();
+		Agent activeAgent = Context.get().getMainAgent();
 		ArrayList<ShortMessage> fetchedMessages = new ArrayList<>();
 		if (limit < 0) { // last x messages requested
 			// fetch last index for messages received from the given contact
-			startIndex = service.findLastMessageIndex(contactId, Long.toString(activeAgent.getId()), startIndex);
+			startIndex = service.findLastMessageIndex(contactId, activeAgent.getIdentifier(), startIndex);
 			if (startIndex < 0) { // no message at all
 				startIndex = 0;
 			}
@@ -220,14 +209,14 @@ public class ShortMessageService extends RESTService {
 			}
 			try {
 				// fetch message with given index
-				String msgId = service.getMessageIdentifier(contactId, Long.toString(activeAgent.getId()), nextIndex);
-				Envelope env = service.getContext().fetchEnvelope(msgId);
-				ShortMessage stored = (ShortMessage) env.getContent(activeAgent);
+				String msgId = service.getMessageIdentifier(contactId, activeAgent.getIdentifier(), nextIndex);
+				Envelope env = Context.get().requestEnvelope(msgId);
+				ShortMessage stored = (ShortMessage) env.getContent();
 				fetchedMessages.add(stored);
-			} catch (ArtifactNotFoundException e) {
+			} catch (EnvelopeNotFoundException e) {
 				// no more messages, OK
 				break;
-			} catch (StorageException | SerializationException | L2pSecurityException | CryptoException e) {
+			} catch (EnvelopeAccessDeniedException | EnvelopeOperationFailedException e) {
 				fetchedMessages.add(new ShortMessage(null, null, nextIndex, e.toString()));
 			}
 		}
@@ -268,7 +257,7 @@ public class ShortMessageService extends RESTService {
 					return Response.status(Status.BAD_REQUEST).entity("Missing parameter recipientId").build();
 				}
 				ShortMessageService service = (ShortMessageService) Context.getCurrent().getService();
-				Agent recipient = service.getContext().getAgent(Long.valueOf(contactId));
+				Agent recipient = Context.get().fetchAgent(contactId);
 				service.sendShortMessage(recipient, message);
 				return Response.ok("MESSAGE_SEND_SUCCESSFULLY").build();
 			} catch (IllegalArgumentException e) {
@@ -301,13 +290,13 @@ public class ShortMessageService extends RESTService {
 			try {
 				ShortMessageService service = (ShortMessageService) Context.getCurrent().getService();
 				ArrayList<ShortMessage> fetchedMessages = service.getShortMessagesReal(contactId, startIndex, limit);
-				Agent activeAgent = service.getContext().getMainAgent();
+				Agent activeAgent = Context.get().getMainAgent();
 				// transform messages into JSON
 				JSONArray jsonMessages = new JSONArray();
 				for (ShortMessage msg : fetchedMessages) {
 					JSONObject jsonMsg = msg.toJsonObject();
 					boolean isAuthor = false;
-					if (msg.getSenderId().equals(Long.toString(activeAgent.getId()))) {
+					if (msg.getSenderId().equals(activeAgent.getIdentifier())) {
 						isAuthor = true;
 					}
 					jsonMsg.put("isAuthor", isAuthor);

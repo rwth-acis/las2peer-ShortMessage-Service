@@ -8,11 +8,11 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import i5.las2peer.api.p2p.ServiceNameVersion;
 import i5.las2peer.p2p.PastryNodeImpl;
-import i5.las2peer.p2p.ServiceNameVersion;
 import i5.las2peer.security.Mediator;
-import i5.las2peer.security.ServiceAgent;
-import i5.las2peer.security.UserAgent;
+import i5.las2peer.security.ServiceAgentImpl;
+import i5.las2peer.security.UserAgentImpl;
 import i5.las2peer.services.shortMessageService.ShortMessageService;
 import i5.las2peer.testing.TestSuite;
 
@@ -34,18 +34,18 @@ public class TripleNodeRMITest {
 
 		// create agents
 		System.out.println("creating user agents...");
-		ServiceAgent service = ServiceAgent.createServiceAgent(
+		ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(
 				new ServiceNameVersion(ShortMessageService.class.getName(), "1.0"), "test-service-pass");
-		UserAgent userA = UserAgent.createUserAgent("test-pass-a");
-		userA.unlockPrivateKey("test-pass-a");
+		UserAgentImpl userA = UserAgentImpl.createUserAgent("test-pass-a");
+		userA.unlock("test-pass-a");
 		nodes.get(0).storeAgent(userA);
-		UserAgent userB = UserAgent.createUserAgent("test-pass-b");
-		userB.unlockPrivateKey("test-pass-b");
+		UserAgentImpl userB = UserAgentImpl.createUserAgent("test-pass-b");
+		userB.unlock("test-pass-b");
 		nodes.get(2).storeAgent(userB);
 
 		// start service instance on node 0
 		System.out.println("starting service on node 0");
-		service.unlockPrivateKey("test-service-pass");
+		service.unlock("test-service-pass");
 		nodes.get(0).storeAgent(service);
 		nodes.get(0).registerReceiver(service);
 
@@ -57,7 +57,7 @@ public class TripleNodeRMITest {
 		System.out.println("user a sending first message to user b");
 		final String firstMessage = "First hello world to B from A";
 		mediatorA.invoke(ShortMessageService.class.getName(), "sendShortMessage",
-				new Serializable[] { Long.toString(userB.getId()), firstMessage }, false);
+				new Serializable[] { userB.getIdentifier(), firstMessage }, false);
 
 		// UserB login at node 2
 		System.out.println("user b login at node 2");
@@ -67,20 +67,20 @@ public class TripleNodeRMITest {
 		@SuppressWarnings("unchecked")
 		ArrayList<HashMap<String, Serializable>> messages1 = (ArrayList<HashMap<String, Serializable>>) mediatorB
 				.invoke(ShortMessageService.class.getName(), "getShortMessages",
-						new Serializable[] { Long.toString(userA.getId()), 0L, 20L }, false);
+						new Serializable[] { userA.getIdentifier(), 0L, 20L }, false);
 		assertEquals(1, messages1.size());
 		assertEquals(firstMessage, messages1.get(0).get("message"));
 
 		// UserA send second message to UserB
 		final String secondMessage = "Second hello world to B from A";
 		mediatorA.invoke(ShortMessageService.class.getName(), "sendShortMessage",
-				new Serializable[] { Long.toString(userB.getId()), secondMessage }, false);
+				new Serializable[] { userB.getIdentifier(), secondMessage }, false);
 
 		// verify UserB received two messages
 		@SuppressWarnings("unchecked")
 		ArrayList<HashMap<String, Serializable>> messages2 = (ArrayList<HashMap<String, Serializable>>) mediatorB
 				.invoke(ShortMessageService.class.getName(), "getShortMessages",
-						new Serializable[] { Long.toString(userA.getId()), 1L, 20L }, false);
+						new Serializable[] { userA.getIdentifier(), 1L, 20L }, false);
 		assertEquals(1, messages2.size());
 		assertEquals(secondMessage, messages2.get(0).get("message"));
 
