@@ -34,8 +34,8 @@ public class TripleNodeRMITest {
 
 		// create agents
 		System.out.println("creating user agents...");
-		ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(
-				new ServiceNameVersion(ShortMessageService.class.getName(), "1.0"), "test-service-pass");
+		ServiceNameVersion nameVersion = new ServiceNameVersion(ShortMessageService.class.getName(), "1.0");
+		ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(nameVersion, "test-service-pass");
 		UserAgentImpl userA = UserAgentImpl.createUserAgent("test-pass-a");
 		userA.unlock("test-pass-a");
 		nodes.get(0).storeAgent(userA);
@@ -56,8 +56,8 @@ public class TripleNodeRMITest {
 		// UserA send first message to UserB
 		System.out.println("user a sending first message to user b");
 		final String firstMessage = "First hello world to B from A";
-		mediatorA.invoke(ShortMessageService.class.getName(), "sendShortMessage",
-				new Serializable[] { userB.getIdentifier(), firstMessage }, false);
+		mediatorA.invoke(nameVersion, "sendShortMessage", new Serializable[] { userB.getIdentifier(), firstMessage },
+				false);
 
 		// UserB login at node 2
 		System.out.println("user b login at node 2");
@@ -66,21 +66,19 @@ public class TripleNodeRMITest {
 		// verify UserB received first message
 		@SuppressWarnings("unchecked")
 		ArrayList<HashMap<String, Serializable>> messages1 = (ArrayList<HashMap<String, Serializable>>) mediatorB
-				.invoke(ShortMessageService.class.getName(), "getShortMessages",
-						new Serializable[] { userA.getIdentifier(), 0L, 20L }, false);
+				.invoke(nameVersion, "getShortMessages", new Serializable[] { userA.getIdentifier(), 0L, 20L }, false);
 		assertEquals(1, messages1.size());
 		assertEquals(firstMessage, messages1.get(0).get("message"));
 
 		// UserA send second message to UserB
 		final String secondMessage = "Second hello world to B from A";
-		mediatorA.invoke(ShortMessageService.class.getName(), "sendShortMessage",
-				new Serializable[] { userB.getIdentifier(), secondMessage }, false);
+		mediatorA.invoke(nameVersion, "sendShortMessage", new Serializable[] { userB.getIdentifier(), secondMessage },
+				false);
 
 		// verify UserB received two messages
 		@SuppressWarnings("unchecked")
 		ArrayList<HashMap<String, Serializable>> messages2 = (ArrayList<HashMap<String, Serializable>>) mediatorB
-				.invoke(ShortMessageService.class.getName(), "getShortMessages",
-						new Serializable[] { userA.getIdentifier(), 1L, 20L }, false);
+				.invoke(nameVersion, "getShortMessages", new Serializable[] { userA.getIdentifier(), 1L, 20L }, false);
 		assertEquals(1, messages2.size());
 		assertEquals(secondMessage, messages2.get(0).get("message"));
 
