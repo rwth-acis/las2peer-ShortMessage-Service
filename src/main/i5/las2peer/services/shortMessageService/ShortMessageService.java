@@ -28,7 +28,6 @@ import i5.las2peer.api.security.AgentOperationFailedException;
 import i5.las2peer.api.security.UserAgent;
 import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.restMapper.RESTService;
-import i5.las2peer.restMapper.annotations.ServicePath;
 import i5.las2peer.services.shortMessageService.ShortMessage.ShortMessageTimeComparator;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.Contact;
@@ -55,7 +54,19 @@ import net.minidev.json.JSONObject;
  * this tool in the las2peer-Template-Project of the RWTH-ACIS group.
  * 
  */
-@ServicePath("/sms-service")
+@Api()
+@SwaggerDefinition(
+		info = @Info(
+				title = "las2peer ShortMessage Service",
+				version = ShortMessageService.API_VERSION,
+				description = "A las2peer messaging service for demonstration purposes.",
+				contact = @Contact(
+						name = "ACIS Group",
+						url = "https://las2peer.org/",
+						email = "cuje@dbis.rwth-aachen.de"),
+				license = @License(
+						name = "ACIS License (BSD3)",
+						url = "https://github.com/rwth-acis/las2peer-ShortMessage-Service/blob/master/LICENSE")))
 public class ShortMessageService extends RESTService {
 
 	public static final String API_VERSION = "1.0";
@@ -64,9 +75,6 @@ public class ShortMessageService extends RESTService {
 
 	private static final long MAXIMUM_MESSAGE_LENGTH = 140;
 	private static final String MESSAGE_IDENTIFIER_PREFIX = "shortmessage";
-
-	private static final String RESOURCE_MESSAGES_BASENAME = "/messages";
-	private static final String RESOURCE_PROPERTIES_BASENAME = "/properties";
 
 	/**
 	 * Constructor: Loads the properties file and sets the values.
@@ -225,126 +233,82 @@ public class ShortMessageService extends RESTService {
 		return fetchedMessages;
 	}
 
-	@Override
-	protected void initResources() {
-		getResourceConfig().register(ResourceMessages.class);
-		getResourceConfig().register(ResourceProperties.class);
+	@POST
+	@Path("/messages/{contactId}")
+	@Produces(MediaType.TEXT_PLAIN)
+	public Response sendShortMessageWeb(@PathParam("contactId") String contactId, String message) {
+		try {
+			if (contactId == null || contactId.isEmpty()) {
+				return Response.status(Status.BAD_REQUEST).entity("Missing parameter recipientId").build();
+			}
+			ShortMessageService service = (ShortMessageService) Context.getCurrent().getService();
+			Agent recipient = Context.get().fetchAgent(contactId);
+			service.sendShortMessage(recipient, message);
+			return Response.ok("MESSAGE_SEND_SUCCESSFULLY").build();
+		} catch (IllegalArgumentException e) {
+			logger.log(Level.INFO, e.getMessage());
+			return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build();
+		} catch (Exception e) {
+			String msg = "Could not send message!";
+			logger.log(Level.SEVERE, msg, e);
+			return Response.status(Status.INTERNAL_SERVER_ERROR)
+					.entity(msg + " See log for details.\nReason: " + e.getMessage()).build();
+		}
 	}
 
-	@Api(
-			value = "messages")
-	@SwaggerDefinition(
-			info = @Info(
-					title = "las2peer ShortMessage Service",
-					version = API_VERSION,
-					description = "A las2peer messaging service for demonstration purposes.",
-					contact = @Contact(
-							name = "ACIS Group",
-							url = "https://las2peer.org/",
-							email = "cuje@dbis.rwth-aachen.de"),
-					license = @License(
-							name = "ACIS License (BSD3)",
-							url = "https://github.com/rwth-acis/las2peer-ShortMessage-Service/blob/master/LICENSE")))
-	@Path(RESOURCE_MESSAGES_BASENAME)
-	public static class ResourceMessages {
-
-		@POST
-		@Path("/{contactId}")
-		@Produces(MediaType.TEXT_PLAIN)
-		public Response sendShortMessageWeb(@PathParam("contactId") String contactId, String message) {
-			try {
-				if (contactId == null || contactId.isEmpty()) {
-					return Response.status(Status.BAD_REQUEST).entity("Missing parameter recipientId").build();
+	/**
+	 * Limit &lt; 0 means load last x messages Limit &gt; 0 load x messages Limit = 0 load infinite messages
+	 * 
+	 * @param contactId The conversation partners agent id.
+	 * @param startIndex The first message to be retrieved.
+	 * @param limit The maximum number of messages that should be retrieved. If negative, the latest number of messages
+	 *            in this conversation is retrieved. e. g. limit = 20 returns the first 20 messages starting from
+	 *            startIndex and limit = -7 returns the last 7 messages of the conversation.
+	 * @return Returns the messages formatted as JSON String, wrapped in an HTML response object.
+	 */
+	@GET
+	@Path("/messages/{contactId}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getShortMessagesWeb(@PathParam("contactId") String contactId,
+			@HeaderParam("startIndex") @DefaultValue("0") long startIndex,
+			@HeaderParam("limit") @DefaultValue("-3") long limit) {
+		try {
+			ShortMessageService service = (ShortMessageService) Context.getCurrent().getService();
+			ArrayList<ShortMessage> fetchedMessages = service.getShortMessagesReal(contactId, startIndex, limit);
+			Agent activeAgent = Context.get().getMainAgent();
+			// transform messages into JSON
+			JSONArray jsonMessages = new JSONArray();
+			for (ShortMessage msg : fetchedMessages) {
+				JSONObject jsonMsg = msg.toJsonObject();
+				boolean isAuthor = false;
+				if (msg.getSenderId().equals(activeAgent.getIdentifier())) {
+					isAuthor = true;
 				}
-				ShortMessageService service = (ShortMessageService) Context.getCurrent().getService();
-				Agent recipient = Context.get().fetchAgent(contactId);
-				service.sendShortMessage(recipient, message);
-				return Response.ok("MESSAGE_SEND_SUCCESSFULLY").build();
-			} catch (IllegalArgumentException e) {
-				logger.log(Level.INFO, e.getMessage());
-				return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build();
-			} catch (Exception e) {
-				String msg = "Could not send message!";
-				logger.log(Level.SEVERE, msg, e);
-				return Response.status(Status.INTERNAL_SERVER_ERROR)
-						.entity(msg + " See log for details.\nReason: " + e.getMessage()).build();
+				jsonMsg.put("isAuthor", isAuthor);
+				jsonMessages.add(jsonMsg);
 			}
+			return Response.ok(jsonMessages.toJSONString()).build();
+		} catch (IllegalArgumentException e) {
+			logger.log(Level.WARNING, e.getMessage());
+			return buildJSONResponse(Status.BAD_REQUEST, e.getMessage());
+		} catch (Exception e) {
+			String msg = "Could not read messages!";
+			logger.log(Level.SEVERE, msg, e);
+			return buildJSONResponse(Status.INTERNAL_SERVER_ERROR, msg + " See log for details.");
 		}
-
-		/**
-		 * Limit &lt; 0 means load last x messages Limit &gt; 0 load x messages Limit = 0 load infinite messages
-		 * 
-		 * @param contactId The conversation partners agent id.
-		 * @param startIndex The first message to be retrieved.
-		 * @param limit The maximum number of messages that should be retrieved. If negative, the latest number of
-		 *            messages in this conversation is retrieved. e. g. limit = 20 returns the first 20 messages
-		 *            starting from startIndex and limit = -7 returns the last 7 messages of the conversation.
-		 * @return Returns the messages formatted as JSON String, wrapped in an HTML response object.
-		 */
-		@GET
-		@Path("/{contactId}")
-		@Produces(MediaType.APPLICATION_JSON)
-		public Response getShortMessagesWeb(@PathParam("contactId") String contactId,
-				@HeaderParam("startIndex") @DefaultValue("0") long startIndex,
-				@HeaderParam("limit") @DefaultValue("-3") long limit) {
-			try {
-				ShortMessageService service = (ShortMessageService) Context.getCurrent().getService();
-				ArrayList<ShortMessage> fetchedMessages = service.getShortMessagesReal(contactId, startIndex, limit);
-				Agent activeAgent = Context.get().getMainAgent();
-				// transform messages into JSON
-				JSONArray jsonMessages = new JSONArray();
-				for (ShortMessage msg : fetchedMessages) {
-					JSONObject jsonMsg = msg.toJsonObject();
-					boolean isAuthor = false;
-					if (msg.getSenderId().equals(activeAgent.getIdentifier())) {
-						isAuthor = true;
-					}
-					jsonMsg.put("isAuthor", isAuthor);
-					jsonMessages.add(jsonMsg);
-				}
-				return Response.ok(jsonMessages.toJSONString()).build();
-			} catch (IllegalArgumentException e) {
-				logger.log(Level.WARNING, e.getMessage());
-				return buildJSONResponse(Status.BAD_REQUEST, e.getMessage());
-			} catch (Exception e) {
-				String msg = "Could not read messages!";
-				logger.log(Level.SEVERE, msg, e);
-				return buildJSONResponse(Status.INTERNAL_SERVER_ERROR, msg + " See log for details.");
-			}
-		}
-
-		private static Response buildJSONResponse(Status status, String message) {
-			JSONArray jsonMessage = new JSONArray();
-			jsonMessage.add(message);
-			return Response.status(status).entity(jsonMessage.toJSONString()).build();
-		}
-
 	}
 
-	@Api(
-			value = "properties")
-	@SwaggerDefinition(
-			info = @Info(
-					title = "las2peer ShortMessage Service",
-					version = API_VERSION,
-					description = "A las2peer messaging service for demonstration purposes.",
-					contact = @Contact(
-							name = "ACIS Group",
-							url = "https://las2peer.org/",
-							email = "cuje@dbis.rwth-aachen.de"),
-					license = @License(
-							name = "ACIS License (BSD3)",
-							url = "https://github.com/rwth-acis/las2peer-ShortMessage-Service/blob/master/LICENSE")))
-	@Path(RESOURCE_PROPERTIES_BASENAME)
-	public static class ResourceProperties {
+	private static Response buildJSONResponse(Status status, String message) {
+		JSONArray jsonMessage = new JSONArray();
+		jsonMessage.add(message);
+		return Response.status(status).entity(jsonMessage.toJSONString()).build();
+	}
 
-		@GET
-		@Path("/maximumMessageLength")
-		@Produces(MediaType.TEXT_PLAIN)
-		public Response getMaximumMessageLength() {
-			return Response.ok(Long.toString(MAXIMUM_MESSAGE_LENGTH)).build();
-		}
-
+	@GET
+	@Path("/properties/maximumMessageLength")
+	@Produces(MediaType.TEXT_PLAIN)
+	public Response getMaximumMessageLength() {
+		return Response.ok(Long.toString(MAXIMUM_MESSAGE_LENGTH)).build();
 	}
 
 }
