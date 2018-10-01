@@ -1,6 +1,6 @@
 <project name="las2peer-ShortMessage-Service" default="jar" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
 
-	<property name="core.version" value="0.7-SNAPSHOT" />
+	<property name="core.version" value="0.7.6" />
 
 	<property name="service.name" value="i5.las2peer.services.shortMessageService" />
 	<property name="service.class" value="ShortMessageService" />

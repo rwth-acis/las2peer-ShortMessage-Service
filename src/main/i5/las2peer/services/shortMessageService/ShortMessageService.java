@@ -28,6 +28,7 @@ import i5.las2peer.api.security.AgentOperationFailedException;
 import i5.las2peer.api.security.UserAgent;
 import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.restMapper.RESTService;
+import i5.las2peer.restMapper.annotations.ServicePath;
 import i5.las2peer.services.shortMessageService.ShortMessage.ShortMessageTimeComparator;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.Contact;
@@ -54,6 +55,7 @@ import net.minidev.json.JSONObject;
  * this tool in the las2peer-Template-Project of the RWTH-ACIS group.
  * 
  */
+@ServicePath("/sms")
 @Api()
 @SwaggerDefinition(
 		info = @Info(

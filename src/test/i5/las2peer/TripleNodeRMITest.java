@@ -34,7 +34,7 @@ public class TripleNodeRMITest {
 
 		// create agents
 		System.out.println("creating user agents...");
-		ServiceNameVersion nameVersion = new ServiceNameVersion(ShortMessageService.class.getName(), "1.0");
+		ServiceNameVersion nameVersion = new ServiceNameVersion(ShortMessageService.class.getName(), "2.0");
 		ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(nameVersion, "test-service-pass");
 		UserAgentImpl userA = UserAgentImpl.createUserAgent("test-pass-a");
 		userA.unlock("test-pass-a");
